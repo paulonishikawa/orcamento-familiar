@@ -27,7 +27,7 @@ body {
     ============================== */
 
 header {
-    background: #007bff;
+    background: #28a745;
     color: white;
     padding: 20px;
     text-align: center;
@@ -83,13 +83,13 @@ main {
     ============================== */
 
 select:hover {
-    border-color: #007bff
+    border-color: #28a745
 }
 
 select:focus {
     outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);    
+    border-color: #28a745;
+    box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);    
 }
 
 /*  ==============================
