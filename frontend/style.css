@@ -102,3 +102,88 @@ main p {
     padding: 40px 20px;
     font-size: 14px;
 }
+
+/*  ==============================
+    TABELA DE RESUMO
+    ============================== */
+
+.secao-titulo {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #28a745;
+}
+
+.tabela-resumo {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.tabela-resumo th,
+.tabela-resumo td {
+    padding: 10px 8px;
+    text-align: right;
+    font-size: 14px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.tabela-resumo th:first-child,
+.tabela-resumo td:first-child {
+    text-align: left;
+    color: #555;
+    font-weight: 500;
+}
+
+.tabela-resumo th {
+    color: #666;
+    font-size:12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.linha-saldo td {
+    font-weight: 700;
+    font-size: 16px;
+    padding-top: 15px;
+    border-top: 2px solid #333;
+    border-bottom: none;
+}
+
+.positivo { color: #28a745;}
+.negativo { color: #dc3545;}
+
+/*  ==============================
+    CONTAS FIXAS
+    ============================== */
+
+.input-realidade {
+    width: 90px;
+    padding: 6px 8px;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 14px;
+    text-align: right;
+}
+
+.input-realidade:focus {
+    outline: none;
+    border-color: #28a745;    
+}
+
+.btn-pago.ativo {
+    background: #28a745;
+    border-color: #28a745;
+    color: white;
+}
+
+.conta-paga td {
+    color: #28a745;
+    opacity: 0.7;
+}
+
+.valor-estimativa {
+    color #999;
+    font-size: 13px;
+}

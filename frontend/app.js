@@ -6,7 +6,20 @@
 function criarMesVazio() {
     return {
         salarios: { estimativa: 550000, realidade: 0, itens: [] },        
-        contasFixas: { estimativa: 150000, realidade: 0, itens: [] },
+        contasFixas: { 
+            estimativa: 150000,
+            realidade: 0,
+            itens: [
+                { id: 1, descricao: "Dízimo",   estimativa: 20000, realidade: 0, pago: false },
+                { id: 2, descricao: "Luz",      estimativa: 12000, realidade: 0, pago: false },
+                { id: 3, descricao: "Água",     estimativa: 8000, realidade: 0, pago: false },
+                { id: 4, descricao: "Gás",      estimativa: 5000, realidade: 0, pago: false },
+                { id: 5, descricao: "Aluguel",  estimativa: 60000, realidade: 0, pago: false },
+                { id: 6, descricao: "Tel/Internet",  estimativa: 8000, realidade: 0, pago: false },
+                { id: 7, descricao: "Carro",  estimativa: 20000, realidade: 0, pago: false },
+                { id: 8, descricao: "Seguro",  estimativa: 17000, realidade: 0, pago: false },
+
+            ] },
         mercado: { estimativa: 60000, realidade: 0, itens: [] },
         refeicoes: { estimativa: 30000, realidade: 0, itens: [] },
         cartaoCredito: { estimativa: 80000, realidade: 0, itens: [] },
@@ -14,63 +27,11 @@ function criarMesVazio() {
     }
 }
 
-// Função para gerar múltiplos meses
-function gerarMeses(anoInicio, mesInicio, quantidade) {
-    const meses = {}
-    let ano = anoInicio
-    let mes = mesInicio
-
-        for (let i = 0; i < quantidade; i++) {
-        // Criar chave no formato"2026-02"
-        const mesFormatado = String(mes).padStart(2, '0')
-        const chave = `${ano}-${mesFormatado}`
-
-        // Criar mês vazio
-        meses[chave] = criarMesVazio()
-
-        // Próximo mês
-        mes = mes + 1
-
-        // Se passou de dezembro, volta para janeiro e incrementa ano
-        if (mes === 13) {
-            mes = 1
-            ano = ano + 1
-        }
-
-        }
-
-    return meses
+// Dados - Gerar novos meses
+let dadosMeses = {
+    "2026-02": criarMesVazio(),
+    "2026-03": criarMesVazio()
 }
-
-// Função para popular dropdown de meses
-function popularDropdownMeses() {
-    // Limpa opções antigas (exceto "selecione")
-    mesSelect.innerHTML = '<option value="">selecione</option>'
-
-    // Nomes dos meses
-    const nomesMeses = [
-        'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
-        'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-    ]
-
-    // Para cada mês nos dados, criar option
-    Object.keys(dadosMeses).forEach(mesAno => {
-        // mesAno = "2026-02"
-        const [ano, mes] = mesAno.split('-') // ["2026", "02"]
-        const nomeMes = nomesMeses[parseInt(mes) - 1] // "Fevereiro"
-
-        //Criar option
-        const option = document.createElement('option')
-        option.value = mesAno
-        option.textContent = `${nomeMes} ${ano}`
-
-        // Adicionar ao select
-        mesSelect.appendChild(option)
-    })
-}
-
-// Dados - Gerar 12 meses automaticamente
-let dadosMeses = gerarMeses(2026, 2, 12)
 
 // Variáveis de controle
 let mesAtual = ""
@@ -80,9 +41,6 @@ let opcaoAtual = "resumo"
 const mesSelect = document.getElementById('mesSelect')
 const opcaoSelect = document.getElementById('opcaoSelect')
 const conteudoPrincipal = document.getElementById('conteudoPrincipal')
-
-// Popular dropdown com os meses disponíveis
-popularDropdownMeses()
 
 // Event Listeners (escutadores de eventos)
 mesSelect.addEventListener('change', function() {
@@ -94,6 +52,208 @@ opcaoSelect.addEventListener('change', function () {
     opcaoAtual = opcaoSelect.value
     renderizar()
 })
+
+// ==============================
+// FUNÇÕES AUXILIARES
+// ==============================
+
+// Função para formatar valores em Ienes
+function formatarMoeda(valor) {
+    return '¥' + valor.toLocaleString('ja-JP')
+}
+
+// Função para calcular totais do resumo
+function calcularResumo(dados) {    
+        const receitasEst = dados.salarios.estimativa
+        const receitasReal = dados.salarios.realidade
+
+        //Despesas (todas as outras categorias)
+        const despesasEst =         
+        dados.contasFixas.estimativa +
+        dados.mercado.estimativa +
+        dados.refeicoes.estimativa +
+        dados.cartaoCredito.estimativa +
+        dados.outrosGastos.estimativa
+
+        const despesasReal =
+        dados.contasFixas.realidade +
+        dados.mercado.realidade +
+        dados.refeicoes.realidade +
+        dados.cartaoCredito.realidade +
+        dados.outrosGastos.realidade
+
+        // Saldos (receitas - despesas)
+        const saldoEst = receitasEst - despesasEst
+        const saldoReal = receitasReal - despesasReal
+
+        // Retornar objetos com os totais
+        return {
+            totalReceitasEstimativa: receitasEst,
+            totalReceitasRealidade: receitasReal,
+            totalDespesasEstimativa: despesasEst,
+            totalDespesasRealidade: despesasReal,
+            saldoEstimativa: saldoEst,
+            saldoRealidade: saldoReal
+        }
+    }
+
+//Função para renderizar a tela de Resumo
+function renderizarResumo(dados) {
+    const r = calcularResumo(dados)
+
+    // Define a cor do saldo (verde ou vermelho)
+    const corSaldoEst = r.saldoEstimativa >= 0 ? 'positivo' : 'negativo'
+    const corSaldoReal = r.saldoRealidade >=0 ? 'positivo' : 'negativo'
+
+    return `
+    <h2 class="secao-titulo">Resumo</h2>
+<table class="tabela-resumo">
+    <thead>
+        <tr>
+            <th></th>
+            <th>Estimativa</th>
+            <th>Realidade</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Salário:</td>
+            <td>${formatarMoeda(r.totalReceitasEstimativa)}</td>
+            <td>${formatarMoeda(r.totalReceitasRealidade)}</td>
+        </tr>
+        <tr>
+            <td>Contas Fixas:</td>
+            <td>${formatarMoeda(dados.contasFixas.estimativa)}</td>
+            <td>${formatarMoeda(dados.contasFixas.realidade)}</td>
+        </tr>
+        <tr>
+            <td>C. Crédito:</td>
+            <td>${formatarMoeda(dados.cartaoCredito.estimativa)}</td>
+            <td>${formatarMoeda(dados.cartaoCredito.realidade)}</td>
+        </tr>
+        <tr>
+            <td>Mercado:</td>
+            <td>${formatarMoeda(dados.mercado.estimativa)}</td>
+            <td>${formatarMoeda(dados.mercado.realidade)}</td>
+        </tr>
+        <tr>
+            <td>Refeições:</td>
+            <td>${formatarMoeda(dados.refeicoes.estimativa)}</td>
+            <td>${formatarMoeda(dados.refeicoes.realidade)}</td>
+        </tr>
+        <tr>
+            <td>Outros:</td>
+            <td>${formatarMoeda(dados.outrosGastos.estimativa)}</td>
+            <td>${formatarMoeda(dados.outrosGastos.realidade)}</td>
+        </tr>
+        <tr class="linha-saldo">
+            <td><strong>Saldo:</strong></td>
+            <td class="${corSaldoEst}">${formatarMoeda(r.saldoEstimativa)}</td>
+            <td class="${corSaldoReal}">${formatarMoeda(r.saldoRealidade)}</td>
+        </tr>
+    </tbody>
+</table>
+`            
+}
+
+// Gera HTML da tela de Contas Fixas:
+function renderizarContas(dados) {
+    const itens = dados.contasFixas.itens
+
+// Calcula o total da Realidade:
+    const totalRealidade = itens.reduce((soma, item) => soma + item.realidade, 0)
+
+// Monta as linhas da tabela:
+    const linhas = itens.map(item => {
+        const classePago = item.pago ? 'conta-paga' : ''
+        return `
+        <tr class="${classePago}">
+            <td>${item.descricao}</td>
+            <td class="valor-estimativa">${formatarMoeda(item.estimativa)}</td>
+            <td>
+                <input
+                    type="number"
+                    class="input-realidade"
+                    value="${item.realidade}"
+                    data-id="${item.id}"
+                    placeholder="0"
+                >
+            </td>
+            <td>
+                <button
+                    class="btn-pago ${item.pago ? 'ativo' : ''}"
+                    data-id="${item.id}"
+                >${item.pago ? '✓' : '○'}</button>
+            </td>
+        </tr>
+        `
+    }).join('')
+
+    return `
+        <h2 class="secao-titulo">Contas Fixas</h2>
+        <table class="tabela-resumo">
+            <thead>
+                <tr>
+                    <th>Descrição</th>
+                    <th>Estimativa</th>
+                    <th>Realidade</th>
+                    <th></th>
+                <tr>
+            </thead>
+            <tbody>
+                ${linhas}
+            </tbody>
+            <tfoot>
+                <tr class="linha-saldo">
+                    <td><strong>Total:</strong></td>
+                    <td>${formatarMoeda(dados.contasFixas.estimativa)}</td>
+                    <td id="totalRealidadeContas">${formatarMoeda(totalRealidade)}</td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+    `
+}
+
+// "Escuta" quando o usuário digita um valor ou clica no botão pago
+function adicionarEventoContas() {
+    // Evento nos input de realidade
+    document.querySelectorAll('.input-realidade').forEach(input => {
+        input.addEventListener('change', function() {
+            const id = parseInt(this.dataset.id)
+            const valor = parseInt(this.value) || 0
+
+            // Atualiza o valor nos dados
+            const item = dadosMeses[mesAtual].contasFixas.itens.find(i => i.id === id)
+            item.realidade = valor
+
+            // Recalcula o total
+            const total = dadosMeses[mesAtual].contasFixas.itens
+                .reduce((soma, i) => soma + i.realidade, 0)
+            document.getElementById('totalRealidadeContas').textContent = formatarMoeda(total)
+
+        })
+    })
+    
+    // Evento nos botões de pago
+    document.querySelectorAll('.btn-pago').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = parseInt(this.dataset.id)
+            const item = dadosMeses[mesAtual].contasFixas.itens.find(i => i.id === id)
+
+            // Alterna entre pago e não pago
+            item.pago = !item.pago
+
+            // Atualiza o botão visualmente
+            this.textContent = item.pago ? '✓' : '○'
+            this.classList.toggle('ativo')
+
+            // Atualiza a cor da linha
+            const linha = this.closest('tr')
+            linha.classList.toggle('conta-paga')
+        })
+    })
+}
 
 // Função principal de renderização
 function renderizar() {
@@ -108,8 +268,11 @@ function renderizar() {
 
     //Atualiza o conteúdo baseado na opção selecionada
     if (opcaoAtual === 'resumo') {
-        conteudoPrincipal.innerHTML = '<h2>Resumo de '+ mesAtual + '</h2><p>Em desenvolvimento...</p>'
+        conteudoPrincipal.innerHTML = renderizarResumo(dados)
+    } else if (opcaoAtual === 'contas') {
+        conteudoPrincipal.innerHTML = renderizarContas(dados)
+        setTimeout(() => adicionarEventoContas(), 0)
     } else {
-        conteudoPrincipal.innerHTML = '<h2>' + opcaoAtual + '</h2><p>Em desenvolvimento...</p>'
+        conteudoPrincipal.innerHTML = `<h2 class="secao-titulo">${opcaoAtual}</h2><p>Em desenvolvimento</p>`
     }
 }
