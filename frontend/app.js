@@ -255,6 +255,288 @@ function adicionarEventoContas() {
     })
 }
 
+// Gera HTML da tela de Mercado
+function renderizarMercado(dados) {
+    const itens = dados.mercado.itens
+    const totalGasto = itens.reduce((soma, item) => soma + item.valor, 0)
+
+    const linhas = itens.length === 0
+        ? '<tr><td colspan="3" style="text-align:center; color: #999; padding:20px;">Nenhuma compra registrada</td></tr>'
+        : itens.map(item => `
+            <tr>
+                <td>${item.descricao}</td>
+                <td class="valor-estimativa">${item.data}</td>
+                <td class="valor-item">
+                    ${formatarMoeda(item.valor)}
+                    <button class="btn-remover" data-id="${item.id}">⊗</button>
+                </td>
+            </td>
+        `).join('')
+
+        return `
+            <h2 class="secao-titulo">Mercado</h2>
+
+            <div class="resumo-categoria">
+                <span>Estimativa: <strong>${formatarMoeda(dados.mercado.estimativa)}</strong></span>
+                <span>Gasto: <strong id="totalMercado">${formatarMoeda(totalGasto)}</strong></span>
+            </div>
+
+            <div class="form-adicionar">
+                <div class="form-group">
+                    <label>Descrição:</label>
+                    <input type="text" id="inputDescricao" placeholder="Digite">
+                </div>
+                <div class="form-inline">
+                    <span class="simbolo-moeda">¥</span>
+                    <input type="number" id="inputValor" placeholder="Digite">
+                    <button class="btn-adicionar" id="btnAdicionar">+</button>
+                </div>
+            </div>
+
+            <table class="tabela-resumo">
+                <thead>
+                    <tr>
+                        <th>Descrição</th>
+                        <th>Data</th>
+                        <th>Valor</th>
+                    </tr>
+                </thead>
+                <tbody id="listaMercado">
+                    ${linhas}
+                </tbody>
+            </table>
+        `
+}
+
+function adicionarEventosMercado() {
+    
+    // Botão de adicionar item
+    document.getElementById('btnAdicionar').addEventListener('click', function() {
+        const descricao = document.getElementById('inputDescricao').value.trim()
+        const valor = parseInt(document.getElementById('inputValor').value) || 0
+
+        // Validação básica
+        if (!descricao || valor <= 0) {
+            alert('Preencha a descrição e um valor válido!')
+            return
+        }
+
+        // Pega a data de hoje automaticamente
+        const hoje = new Date()
+        const dia = String(hoje.getDate()).padStart(2, '0')
+        const mes = String(hoje.getMonth() + 1).padStart(2, '0')
+        const dataFormatada = dia + '/' + mes
+
+        // Cria o novo item
+        const novoItem = {
+            id: Date.now(),
+            descricao: descricao,
+            valor: valor,
+            data: dataFormatada
+        }
+
+        // Adiciona nos dados
+        dadosMeses[mesAtual].mercado.itens.push(novoItem)
+
+        // Atualiza a tela
+        renderizar()
+    })
+
+    // Botões de remover
+    document.querySelectorAll('.btn-remover').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = parseInt(this.dataset.id)
+
+            // Remove o item do array
+            dadosMeses[mesAtual].mercado.itens = dadosMeses[mesAtual].mercado.itens
+                .filter(item => item.id !== id)
+            
+            // Atualiza a tela
+            renderizar()
+        })
+    })
+}
+
+// Gera HTML da tela de Refeições
+function renderizarRefeicoes(dados) {
+    const itens = dados.refeicoes.itens
+    const totalGasto = itens.reduce((soma, item) => soma + item.valor, 0)
+
+    const linhas = itens.length === 0
+    ? '<tr><td colspan="3" style="text-align:center; color:#999; padding:20px;">Nenhuma refeição registrada</td></tr>'
+    : itens.map(item => `
+        <tr>
+            <td>${item.descricao}</td>
+            <td class="valor-estimativa">${item.data}</td>
+            <td class="valor-item">
+                ${formatarMoeda(item.valor)}
+                <button class="btn-remover" data-id="${item.id}">⊗</button>
+            </td>
+        </tr>
+    `).join('')
+
+return `
+        <h2 class="secao-titulo">Refeições</h2>
+
+        <div class="resumo-categoria">
+            <span>Estimativa: <strong>${formatarMoeda(dados.refeicoes.estimativa)}</strong></span>
+            <span>Gasto: <strong id="totalRefeicoes">${formatarMoeda(totalGasto)}</strong></span>
+        </div>
+
+        <div class="form-adicionar">
+            <div class="form-group">
+                <label>Descrição:</label>
+                <input type="text" id="inputDescricao" placeholder="Digite">
+            </div>
+            <div class="form-inline">
+                <span class="simbolo-moeda">¥</span>
+                <input type="number" id="inputValor" placeholder="Digite">
+                <button class="btn-adicionar" id="btnAdicionar">+</button>
+            </div>
+        </div>
+
+        <table class="tabela-resumo">
+            <thead>
+                <tr>
+                    <th>Descrição</th>
+                    <th>Data</th>
+                    <th>Valor</th>
+                </tr>
+            </thead>
+            <tbody id="listaRefeicoes">
+                ${linhas}
+            </tbody>
+        </table>
+`   
+}
+
+function adicionarEventosRefeicoes() {
+    
+    document.getElementById('btnAdicionar').addEventListener('click', function() {
+        const descricao = document.getElementById('inputDescricao').value.trim()
+        const valor = parseInt(document.getElementById('inputValor').value) || 0
+
+        if (!descricao || valor <= 0) {
+            alert('Preencha a descrição e um valor válido!')
+            return
+        }
+
+        const hoje = new Date()
+        const dia = String(hoje.getDate()).padStart(2, '0')
+        const mes = String(hoje.getMonth() + 1).padStart(2, '0')
+        const dataFormatada = dia + '/' + mes
+
+        const novoItem = {
+            id: Date.now(),
+            descricao: descricao,
+            valor: valor,
+            data: dataFormatada
+        }
+
+        dadosMeses[mesAtual].refeicoes.itens.push(novoItem)
+        renderizar()
+    })
+
+    document.querySelectorAll('.btn-remover').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = parseInt(this.dataset.id)
+            dadosMeses[mesAtual].refeicoes.itens = dadosMeses[mesAtual].refeicoes.itens
+                .filter(item => item.id !== id)
+            renderizar()
+        })
+    })
+}
+
+// Gera HTML da tela de Outros Gastos
+function renderizarOutros(dados) {
+    const itens = dados.outrosGastos.itens
+    const totalGastos = itens.reduce((soma, item) => soma + item.valor, 0)
+
+    const linhas = itens.length === 0
+        ? '<tr><td colspan="3" style="text-align:center; color:#999; padding:20px;">Nenhum gasto registrado</td></tr>'
+        : itens.map(item => `
+            <tr>
+                <td>${item.descricao}</td>
+                <td class="valor-estimativa">${item.data}</td>
+                <td class="valor-item">
+                    ${formatarMoeda(item.valor)}
+                    <button class="btn-remover" data-id="${item.id}">⊗</button>
+                </td>
+            </tr>
+            `).join('')
+    return `
+        <h2 class="secao-titulo">Outros Gastos</h2>
+
+        <div class="resumo-categoria">
+            <span>Estimativa: <strong>${formatarMoeda(dados.outrosGastos.estimativa)}</strong></span>
+            <span>Gasto: <strong id="totalOutros">${formatarMoeda(totalGastos)}</strong></span>
+        </div>
+
+        <div class="form-adicionar">
+            <div class="form-group">
+                <label>Descrição:</label>
+                <input type="text" id="inputDescricao" placeholder="Digite">
+            </div>
+            <div class="form-inline">
+                <span class="simbolo-moeda">¥</span>
+                <input type="number" id="inputValor" placeholder="Digite">
+                <button class="btn-adicionar" id="btnAdicionar">+</button>
+            </div>
+        </div>
+
+        <table class="tabela-resumo">
+            <thead>
+                <tr>
+                    <th>Descrição</th>
+                    <th>Data</th>
+                    <th>Valor</th>
+                </tr>
+            </thead>
+            <tbody id="listaOutros">
+                ${linhas}
+            </tbody>
+        </table>
+    `
+}
+
+function adicionarEventosOutros() {
+
+    document.getElementById('btnAdicionar').addEventListener('click', function () {
+        const descricao = document.getElementById('inputDescricao').value.trim()
+        const valor = parseInt(document.getElementById('inputValor').value) || 0
+
+        if (!descricao || valor <= 0) {
+            alert('Preencha a descrição e um valor válido!')
+            return
+        }
+
+        const hoje = new Date()
+        const dia = String(hoje.getDate()).padStart(2, '0')
+        const mes = String(hoje.getMonth() + 1).padStart(2, '0')
+        const dataFormatada = dia + '/' + mes
+
+        const novoItem = {
+            id: Date.now(),
+            descricao: descricao,
+            valor: valor,
+            data: dataFormatada
+        }
+
+        dadosMeses[mesAtual].outrosGastos.itens.push(novoItem)
+        renderizar()
+    })
+
+    document.querySelectorAll('.btn-remover').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = parseInt(this.dataset.id)
+            dadosMeses[mesAtual].outrosGastos.itens = dadosMeses[mesAtual].outrosGastos.itens
+                .filter(item => item.id !== id)
+
+                renderizar()
+        })
+    })
+}
+
 // Função principal de renderização
 function renderizar() {
     // Verifica se um mês foi selecionado
@@ -272,6 +554,15 @@ function renderizar() {
     } else if (opcaoAtual === 'contas') {
         conteudoPrincipal.innerHTML = renderizarContas(dados)
         setTimeout(() => adicionarEventoContas(), 0)
+    } else if (opcaoAtual === 'mercado') {
+        conteudoPrincipal.innerHTML = renderizarMercado(dados)
+        setTimeout(() => adicionarEventosMercado(), 0)
+    } else if (opcaoAtual === 'refeicoes') {
+        conteudoPrincipal.innerHTML = renderizarRefeicoes(dados)
+        setTimeout(() => adicionarEventosRefeicoes(), 0)
+    } else if (opcaoAtual === 'outros'){
+        conteudoPrincipal.innerHTML = renderizarOutros(dados)
+        setTimeout(() => adicionarEventosOutros(), 0)
     } else {
         conteudoPrincipal.innerHTML = `<h2 class="secao-titulo">${opcaoAtual}</h2><p>Em desenvolvimento</p>`
     }
