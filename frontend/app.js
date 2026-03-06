@@ -36,6 +36,7 @@ let dadosMeses = {
 // Variáveis de controle
 let mesAtual = ""
 let opcaoAtual = "resumo"
+let abaCartao = "avista"
 
 // Capturar elementos do HTML
 const mesSelect = document.getElementById('mesSelect')
@@ -537,6 +538,200 @@ function adicionarEventosOutros() {
     })
 }
 
+// Gera HTML da tela de Cartão de Crédito
+function renderizarCartao(dados) {
+
+    const itens = dados.cartaoCredito.itens
+
+    const itensAvista       = itens.filter(item => item.totalParcelas === 1)
+    const itensParcelado    = itens.filter(item => item.totalParcelas > 1)
+
+    // Calcula total da aba ativa
+    const totalAvista = itensAvista
+        .reduce((soma, item) => soma + item.valorParcela, 0)
+    
+    const totalParcelado = itensParcelado  
+        .reduce((soma, item) => soma + item.valorParcela, 0)
+    
+    // Gera as linhas da aba À Vista
+    const linhasAvista = itensAvista.length === 0
+        ? '<tr><td colspan="3" style="text-align: center; color: #999; padding: 15px;">Nenhum lançamento</td></tr>'
+        : itensAvista.map(item => `
+            <tr>
+                <td>${item.descricao}</td>
+                <td class="valor-estimativa">${item.dataCompra}</td>
+                <td class="valor-item">
+                    ${formatarMoeda(item.valorParcela)}
+                    <button class="btn-remover" data-id="${item.id}">⊗</button>
+                </td>
+            </tr>
+            `).join('')
+
+    // Gera as linhas da aba Parcelado
+    const linhasParcelado = itensParcelado.length === 0
+        ? '<tr><td colspan="3" style="text-align: center; color: #999; padding: 15px;">Nenhum lançamento</td></tr>'
+        : itensParcelado.map(item => `
+            <tr>
+                <td>${item.descricao}</td>
+                <td class="valor-estimativa">${item.parcelaAtual}/${item.totalParcelas}</td>
+                <td class="valor-item">
+                    ${formatarMoeda(item.valorParcela)}
+                    <button class="btn-remover" data-id="${item.id}">⊗</button>
+                </td>
+            </tr>
+            `).join('')
+
+    return `
+        <h2 class="secao-titulo">Cartão de Crédito</h2>
+
+        <div class="resumo-categoria">
+            <span>Estimativa: <strong>${formatarMoeda(dados.cartaoCredito.estimativa)}</strong></span>
+            <span>Total mês: <strong>${formatarMoeda(totalAvista + totalParcelado)}</strong></span>
+        </div>
+
+        <div class="abas-cartao">
+            <button class="aba-btn ${abaCartao === 'avista' ? 'ativa' : ''}" data-aba="avista">
+                à vista
+            </button>
+            <button class="aba-btn ${abaCartao === 'parcelado' ? 'ativa' : ''}" data-aba="parcelado">
+                parcelado
+            </button>
+        </div>
+
+        <div class="form-adicionar">
+
+        ${ abaCartao === 'avista' ? `
+            <div class="form-group">
+                <label>Descrição:</label>
+                <input type="text" id="inputDescricao" placeholder="Digite">
+            </div>
+            <div class="form-inline">
+                <span class="simbolo-moeda">¥</span>
+                <input type="number" id="inputValor" placeholder="Digite">
+                <button class="btn-adicionar" id="btnAdicionar">+</button>
+            </div>
+        ` : `
+            <div class="form-group">
+                <label>Descrição:</label>
+                <input type="text" id="inputDescricao" placeholder="Ex: Amazon">
+            </div>
+            <div class="form-group" style="margin-top: 10px">
+                <label>Parcela:</label>
+                <div class="form-inline">
+                    <input type="number" id="inputParcelaAtual" placeholder="Atual" min="1" style="width:80px">
+                    <span style="padding: 0 6px; color: #666">de</span>
+                    <input type="number" id="inputTotalParcelas" placeholder="Total" min="2" style="width:80px">
+                </div>
+            </div>
+            <div class="form-group" style="margin-top:10px">
+               <label>Valor da parcela:</label>            
+                <div class="form-inline">
+                    <span class="simbolo-moeda">¥</span>
+                    <input type="number" id="inputValor" placeholder="Digite">
+                    <button class="btn-adicionar" id="btnAdicionar">+</button>
+                </div>
+            </div>
+            `}
+            </div>
+
+        <table class="tabela-resumo">
+            <thead>
+                <tr>
+                    <th>Descrição</th>
+                    <th>${abaCartao === 'avista' ? 'Data' : 'Parcela'}</th>
+                    <th>Valor</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${abaCartao === 'avista' ? linhasAvista : linhasParcelado}
+            </tbody>
+        </table>
+    `
+}
+
+function adicionarEventosCartao() {
+
+    //Troca de abas
+    document.querySelectorAll('.aba-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            abaCartao = this.dataset.aba
+            renderizar()
+        })
+    })
+
+    // Botão adicionar
+    const btnAdicionar = document.getElementById('btnAdicionar')
+    if (!btnAdicionar) return
+
+    btnAdicionar.addEventListener('click', function() {
+        const descricao = document.getElementById('inputDescricao').value.trim()
+        const valor     = parseInt(document.getElementById('inputValor').value) || 0
+
+        if (!descricao || valor <= 0) {
+            alert('Preencha a descrição e um valor válido')
+            return
+        }
+
+    // Pega a data de hoje
+    const hoje = new Date()
+    const data = String(hoje.getDate()).padStart(2, '0') + '/' +
+                 String(hoje.getMonth() + 1).padStart(2, 0)
+
+    if (abaCartao === 'avista') {
+        // Compra à vista - 1 parcela
+        const novoItem = {
+            id: Date.now(),
+            descricao: descricao,
+            valorTotal: valor,
+            valorParcela: valor,
+            parcelaAtual: 1,
+            totalParcelas: 1,
+            dataCompra: data
+        }
+        dadosMeses[mesAtual].cartaoCredito.itens.push(novoItem)
+
+    } else {
+        // Compra parcelada 
+        const parcelaAtual  = parseInt(document.getElementById('inputParcelaAtual').value) || 0
+        const totalParcelas = parseInt(document.getElementById('inputTotalParcelas').value) || 0
+
+
+        if (parcelaAtual < 1 || totalParcelas < 2) {
+            alert('Informe a parcela atual e o total de parcelas!')
+            return
+        }
+
+        if (parcelaAtual > totalParcelas) {
+            alert('A parcela atual não pode ser maior que o total!')
+            return
+        }
+
+        const novoItem = {
+            id: Date.now(),
+            descricao: descricao,
+            valorTotal: valor * totalParcelas,
+            valorParcela: valor,
+            parcelaAtual: parcelaAtual,
+            totalParcelas: totalParcelas,
+            dataCompra: data
+        }
+        dadosMeses[mesAtual].cartaoCredito.itens.push(novoItem)
+    }
+
+    renderizar()
+    })
+
+    // Botões de remover
+    document.querySelectorAll('.btn-remover').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = parseInt(this.dataset.id)
+            dadosMeses[mesAtual].cartaoCredito.itens = dadosMeses[mesAtual].cartaoCredito.itens
+                .filter(item => item.id!== id)
+            renderizar()
+        })
+    })
+}
+
 // Função principal de renderização
 function renderizar() {
     // Verifica se um mês foi selecionado
@@ -563,6 +758,9 @@ function renderizar() {
     } else if (opcaoAtual === 'outros'){
         conteudoPrincipal.innerHTML = renderizarOutros(dados)
         setTimeout(() => adicionarEventosOutros(), 0)
+    } else if (opcaoAtual === 'cartao') { 
+        conteudoPrincipal.innerHTML = renderizarCartao(dados)
+        setTimeout(() => adicionarEventosCartao(), 0)
     } else {
         conteudoPrincipal.innerHTML = `<h2 class="secao-titulo">${opcaoAtual}</h2><p>Em desenvolvimento</p>`
     }
