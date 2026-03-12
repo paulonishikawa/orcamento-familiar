@@ -5,7 +5,19 @@
 // Função para criar estrutura de mês vazio
 function criarMesVazio() {
     return {
-        salarios: { estimativa: 550000, realidade: 0, itens: [] },        
+        salarios: { 
+            estimativa: 550000, 
+            realidade: 0, 
+            valorHora: 1700,
+            diasDiurnos: 10,
+            diasNoturnos: 10,
+            hesDiurnas: 0,
+            hesNoturnas: 0,
+            seguroSaude: 18432,
+            seguroAssist: 2862,
+            impostoResidencial: 12600,
+            previdencia: 32940
+         },        
         contasFixas: { 
             estimativa: 150000,
             realidade: 0,
@@ -97,6 +109,241 @@ function calcularResumo(dados) {
             saldoRealidade: saldoReal
         }
     }
+
+// Calcula todos os valores do salário
+function calcularSalario(s) {
+    const HORAS_DIURNAS_DIA = 7.833
+    const HORAS_NOTURNAS_DIA = 7.583
+    const HORAS_ADICIONAL = 1.75 // horas após 22h (com adicional)
+
+    const salarioDiurno = s.diasDiurnos * HORAS_DIURNAS_DIA * s.valorHora
+    const salarioNoturno = s.diasNoturnos * HORAS_NOTURNAS_DIA * s.valorHora
+
+    const heDiurnas = s.hesDiurnas * s.valorHora * 1.25
+    const heNoturnas = s.hesNoturnas * s.valorHora * 1.25
+
+    const adicionalNoturno = s.diasNoturnos * 
+        (HORAS_ADICIONAL + s.hesNoturnas) * s.valorHora * 0.25
+    
+    const totalDias = s.diasDiurnos + s.diasNoturnos
+    const premioAssiduidade     = 30000
+    const premioTurno           = totalDias * 500
+    const auxTransporte         = totalDias * 210
+
+    const bruto =   salarioDiurno + salarioNoturno +
+                    heDiurnas + heNoturnas +
+                    adicionalNoturno + premioAssiduidade +
+                    premioTurno + auxTransporte
+    
+    // Descontos variáveis (calculados sobre o bruto)
+    const seguroDesemprego = Math.round(bruto * 0.0055)
+    const impostoRenda = Math.round(bruto * 0.0242)
+
+    // TOTAL DESCONTOS
+    const totalDescontos = s.seguroSaude + s.seguroAssist +
+                            s.impostoResidencial + s.previdencia +
+                            seguroDesemprego + impostoRenda
+    
+    // LÍQUIDO
+    const liquido = bruto - totalDescontos
+
+    // Retorna todos os valores calculados
+    return {
+        salarioDiurno,
+        salarioNoturno,
+        heDiurnas,
+        heNoturnas,
+        adicionalNoturno,
+        premioAssiduidade,
+        premioTurno,
+        auxTransporte,
+        bruto,
+        seguroDesemprego,
+        impostoRenda,
+        totalDescontos,
+        liquido
+    }
+}
+
+// Função para renderizar o salário
+function renderizarSalario(dados) {
+    const s = dados.salarios
+    const c = calcularSalario(s)
+
+    return `
+        <h2 class="secao-titulo">Salário</h2>
+
+        <div class="salario-secao">
+            <h3 class="salario-titulo">⚙️ configuração</h3>
+            <div class="salario-linha">
+                <label>Valor por hora (¥):</label>
+                <div class="salario-calc">
+                    <span class="simbolo-moeda">¥</span>
+                    <input type="number" class="input-salario largo" id="valorHora"
+                        value="${s.valorHora}">
+                </div>
+            </div>
+        </div>
+
+        <div class="salario-secao">
+            <h3 class="salario-titulo">📅 Dias Trabalhados</h3>
+
+            <div class="salario-linha">
+                <label>Turno diurno (dias):</label>
+                <div class="salario-calc">
+                    <input type="number" class="input-salario" id="diasDiurnos"
+                        value="${s.diasDiurnos}" min="0">
+                    <span class="salario-resultado">${formatarMoeda(c.salarioDiurno)}</span>
+                </div>
+            </div>
+
+            <div class="salario-linha">
+                <label>H.E. Diurnas (horas):</label>
+                <div class="salario-calc">
+                    <input type="number" class="input-salario" id="hesDiurnas"
+                        value="${s.hesDiurnas}" min="0">
+                    <span class="salario-resultado">${formatarMoeda(c.heDiurnas)}</span>
+                </div>
+            </div>
+
+            <div class="salario-linha">
+                <label>Turno noturno (dias):</label>
+                <div class="salario-calc">
+                    <input type="number" class="input-salario" id="diasNoturnos"
+                        value="${s.diasNoturnos}" min="0">
+                    <span class="salario-resultado">${formatarMoeda(c.salarioNoturno)}</span>
+                </div>
+            </div>
+
+            <div class="salario-linha">
+                <label>H.E. noturnas (horas):</label>
+                <div class="salario-calc">
+                    <input type="number" class="input-salario" id="hesNoturnas"
+                        value="${s.hesNoturnas}" min="0">
+                    <span class="salario-resultado">${formatarMoeda(c.heNoturnas)}</span>
+                </div>
+            </div>
+
+            <div class="salario-linha">
+                <label>Adicional noturno:</label>
+                <div class="salario-calc">
+                    <span class="salario-resultado">${formatarMoeda(c.adicionalNoturno)}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="salario-secao">
+            <h3 class="salario-titulo">🎁 Prêmios e Auxílios</h3>
+
+            <div class="salario-linha">
+                <label>Prêmio assiduidade:</label>
+                <span class="salario-resultado">${formatarMoeda(c.premioAssiduidade)}</span>
+            </div>
+            <div class="salario-linha">
+                <label>Prêmio turno (¥500/dia):</label>
+                <span class="salario-resultado">${formatarMoeda(c.premioTurno)}</span>
+            </div>
+            <div class="salario-linha">
+                <label>Aux.Transporte (¥210/dia):</label>
+                <span class="salario-resultado">${formatarMoeda(c.auxTransporte)}</span>
+            </div>
+
+            <div class="salario-bruto">
+                <span>Total Bruto:</span>
+                <span>${formatarMoeda(c.bruto)}</span>
+            </div>
+        </div>
+
+        <div class="salario-secao">
+            <h3 class="salario-titulo">📤 Descontos</h3>
+
+            <div class="salario-linha">
+                <label>Seguro Saúde (fixo):</label>
+                <span class="salario-desconto">${formatarMoeda(s.seguroSaude)}</span>
+            </div>
+            <div class="salario-linha">
+                <label>Seg. Assistência (fixo):</label>
+                <span class="salario-desconto">${formatarMoeda(s.seguroAssist)}</span>
+            </div>
+            <div class="salario-linha">
+                <label>Imp. Residencial (fixo):</label>
+                <span class="salario-desconto">${formatarMoeda(s.impostoResidencial)}</span>
+            </div>
+            <div class="salario-linha">
+                <label>Previdência:</label>
+                <span class="salario-desconto">${formatarMoeda(s.previdencia)}</span>
+            </div>
+            <div class="salario-linha">
+                <label>Seg. Desemprego:</label>
+                <span class="salario-desconto">${formatarMoeda(c.seguroDesemprego)}</span>
+            </div>
+            <div class="salario-linha">
+                <label>Imp. Renda:</label>
+                <span class="salario-desconto">${formatarMoeda(c.impostoRenda)}</span>
+            </div>
+        </div>
+
+        <div class="salario-liquido">
+            <span>💰 Estimativa Líquida:</span>
+            <span id="valorLiquido" class="${c.liquido >= 0 ? 'positivo' : 'negativo'}">
+                ${formatarMoeda(c.liquido)}
+            </span>
+        </div>
+
+        <div class="salario-secao" style="margin-top:15px">
+            <h3 class="salario-titulo">✅ Realidade</h3>
+            <div class="salario-linha">
+                <label>Valor líquido real (do holerite):</label>
+                <div class="salario-calc">
+                    <span class="simbolo-moeda">¥</span>
+                    <input type="number" class="input-salario largo" id="salarioRealidade"
+                        value="${s.realidade || ''}" placeholder="0">
+                </div>
+            </div>
+        </div>           
+    `
+}
+
+// Função para adicionar eventos Salario
+function adicionarEventosSalario() {
+
+    // Campos que disparam recálculo completo da tela
+    const campos = ['valorHora', 'diasDiurnos', 'diasNoturnos',
+                    'hesDiurnas', 'hesNoturnas']
+    
+    campos.forEach(campo => {
+        const input = document.getElementById(campo)
+        if (!input) return
+
+        input.addEventListener('input', function () {
+            dadosMeses[mesAtual].salarios[campo] = parseFloat(this.value) || 0
+
+        // Recalcula tudo
+        const s = dadosMeses[mesAtual].salarios
+        const c = calcularSalario(s)
+
+        // Atualiza o líquido
+        const elemLiquido = document.getElementById('valorLiquido')
+        if (elemLiquido) {
+            elemLiquido.textContent = formatarMoeda(c.liquido)
+            elemLiquido.className = c.liquido >= 0 ? 'positivo' : 'negativo'
+        }
+
+        // Atualiza estimativa no objeto de dados
+        dadosMeses[mesAtual].salarios.estimativa = c.liquido
+
+        })
+    })
+
+    // Campo de realidade - salva o valor real digitado
+    const inputRealidade = document.getElementById('salarioRealidade')
+    if (inputRealidade) {
+        inputRealidade.addEventListener('input', function() {
+            const valor = parseInt(this.value) || 0
+            dadosMeses[mesAtual].salarios.realidade = valor
+        })
+    }
+}
 
 //Função para renderizar a tela de Resumo
 function renderizarResumo(dados) {
@@ -749,6 +996,9 @@ function renderizar() {
     } else if (opcaoAtual === 'contas') {
         conteudoPrincipal.innerHTML = renderizarContas(dados)
         setTimeout(() => adicionarEventoContas(), 0)
+    } else if (opcaoAtual === 'salario') {
+        conteudoPrincipal.innerHTML = renderizarSalario(dados)
+        setTimeout(() => adicionarEventosSalario(), 0)
     } else if (opcaoAtual === 'mercado') {
         conteudoPrincipal.innerHTML = renderizarMercado(dados)
         setTimeout(() => adicionarEventosMercado(), 0)
