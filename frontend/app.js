@@ -4,9 +4,11 @@
 
 // Função para criar estrutura de mês vazio
 function criarMesVazio() {
+     
     return {
+        inicializado: false,
         salarios: { 
-            estimativa: 550000, 
+            estimativa: 0, 
             realidade: 0, 
             valorHora: 1700,
             diasDiurnos: 10,
@@ -19,23 +21,20 @@ function criarMesVazio() {
             previdencia: 32940
          },        
         contasFixas: { 
-            estimativa: 150000,
+            estimativa: 0,
             realidade: 0,
-            itens: [
-                { id: 1, descricao: "Dízimo",   estimativa: 20000, realidade: 0, pago: false },
-                { id: 2, descricao: "Luz",      estimativa: 12000, realidade: 0, pago: false },
-                { id: 3, descricao: "Água",     estimativa: 8000, realidade: 0, pago: false },
-                { id: 4, descricao: "Gás",      estimativa: 5000, realidade: 0, pago: false },
-                { id: 5, descricao: "Aluguel",  estimativa: 60000, realidade: 0, pago: false },
-                { id: 6, descricao: "Tel/Internet",  estimativa: 8000, realidade: 0, pago: false },
-                { id: 7, descricao: "Carro",  estimativa: 20000, realidade: 0, pago: false },
-                { id: 8, descricao: "Seguro",  estimativa: 17000, realidade: 0, pago: false },
+            itens: [] 
+        },
 
-            ] },
-        mercado: { estimativa: 60000, realidade: 0, itens: [] },
-        refeicoes: { estimativa: 30000, realidade: 0, itens: [] },
-        cartaoCredito: { estimativa: 80000, realidade: 0, itens: [] },
-        outrosGastos: { estimativa: 40000, realidade: 0, itens: [] }
+        mercado: { estimativa: 40000, realidade: 0, itens: [] },
+        refeicoes: { estimativa: 15000, realidade: 0, itens: [] },
+        cartaoCredito: { estimativa: 70000, realidade: 0, itens: [] },
+        outrosGastos: { 
+            estimativa: 10000, 
+            realidade: 0, 
+            itens: [],
+            receitasExtras: []
+        }
     }
 }
 
@@ -77,8 +76,11 @@ function formatarMoeda(valor) {
 
 // Função para calcular totais do resumo
 function calcularResumo(dados) {    
-        const receitasEst = dados.salarios.estimativa
-        const receitasReal = dados.salarios.realidade
+    const receitasEst = dados.salarios.estimativa
+    const receitasReal = dados.salarios.realidade
+    
+    const totalExtrasReal = (dados.outrosGastos.receitasExtras || [])
+        .reduce((soma, item) => soma + item.valor, 0)
 
         //Despesas (todas as outras categorias)
         const despesasEst =         
@@ -103,6 +105,7 @@ function calcularResumo(dados) {
         return {
             totalReceitasEstimativa: receitasEst,
             totalReceitasRealidade: receitasReal,
+            totalExtrasRealidade: totalExtrasReal,
             totalDespesasEstimativa: despesasEst,
             totalDespesasRealidade: despesasReal,
             saldoEstimativa: saldoEst,
@@ -369,6 +372,13 @@ function renderizarResumo(dados) {
             <td>${formatarMoeda(r.totalReceitasEstimativa)}</td>
             <td>${formatarMoeda(r.totalReceitasRealidade)}</td>
         </tr>
+        ${r.totalExtrasRealidade > 0 ? `
+        <tr>
+            <td>Receitas Extras:</td>
+            <td>-</td>
+            <td class="positivo">+${formatarMoeda(r.totalExtrasRealidade)}</td>
+        </tr>
+            ` : ''}
         <tr>
             <td>Contas Fixas:</td>
             <td>${formatarMoeda(dados.contasFixas.estimativa)}</td>
@@ -408,11 +418,13 @@ function renderizarResumo(dados) {
 function renderizarContas(dados) {
     const itens = dados.contasFixas.itens
 
-// Calcula o total da Realidade:
-    const totalRealidade = itens.reduce((soma, item) => soma + item.realidade, 0)
+// Calcula o total da Estimativa e Realidade:
+const totalEstimativa = itens.reduce((soma, item) => soma + item.estimativa, 0)    
+const totalRealidade = itens.reduce((soma, item) => soma + item.realidade, 0)
 
-// Monta as linhas da tabela:
-    const linhas = itens.map(item => {
+const linhas = itens.length === 0
+    ? '<tr><td colspan="4" style="text-align:center; color: #999; padding:20px;">Nenhuma conta registrada</td></tr>'
+    : itens.map(item => {
         const classePago = item.pago ? 'conta-paga' : ''
         return `
         <tr class="${classePago}">
@@ -422,16 +434,17 @@ function renderizarContas(dados) {
                 <input
                     type="number"
                     class="input-realidade"
-                    value="${item.realidade}"
-                    data-id="${item.id}"
+                    value="${item.realidade || ''}"
                     placeholder="0"
+                    data-id="${item.id}"
                 >
             </td>
-            <td>
+            <td style="white-space:nowrap">
                 <button
                     class="btn-pago ${item.pago ? 'ativo' : ''}"
                     data-id="${item.id}"
                 >${item.pago ? '✓' : '○'}</button>
+                <button class="btn-remover" data-id="${item.id}">⊗</button>
             </td>
         </tr>
         `
@@ -439,6 +452,19 @@ function renderizarContas(dados) {
 
     return `
         <h2 class="secao-titulo">Contas Fixas</h2>
+       
+       <div class="form-adicionar">
+        <div class="form-group">
+            <label>Descrição:</label>
+            <input type="text" id="inputDescricao" placeholder="Ex: Aluguel">
+        </div>
+        <div class="form-inline">
+            <span class="simbolo-moeda">¥</span>
+            <input type="number" id="inputValor" placeholder="Estimativa">
+            <button class="btn-adicionar" id="btnAdicionar">+</button>
+        </div>
+        </div>
+       
         <table class="tabela-resumo">
             <thead>
                 <tr>
@@ -454,7 +480,7 @@ function renderizarContas(dados) {
             <tfoot>
                 <tr class="linha-saldo">
                     <td><strong>Total:</strong></td>
-                    <td>${formatarMoeda(dados.contasFixas.estimativa)}</td>
+                    <td>${formatarMoeda(totalEstimativa)}</td>
                     <td id="totalRealidadeContas">${formatarMoeda(totalRealidade)}</td>
                     <td></td>
                 </tr>
@@ -465,6 +491,33 @@ function renderizarContas(dados) {
 
 // "Escuta" quando o usuário digita um valor ou clica no botão pago
 function adicionarEventoContas() {
+    
+    // Botão adicionar
+    document.getElementById('btnAdicionar').addEventListener('click', function () {
+        const descricao = document.getElementById('inputDescricao').value.trim()
+        const valor = parseInt(document.getElementById('inputValor').value) || 0
+
+        if (!descricao || valor <= 0) {
+            alert('Preencha a descrição e um valor válido!')
+            return
+        }
+
+        dadosMeses[mesAtual].contasFixas.itens.push({
+            id: Date.now(),
+            descricao,
+            estimativa: valor,
+            realidade: 0,
+            pago: false
+        })
+
+    // Atualiza estimativa geral da categoria
+    dadosMeses[mesAtual].contasFixas.estimativa =
+        dadosMeses[mesAtual].contasFixas.itens
+            .reduce((soma, i) => soma + i.estimativa, 0)
+    
+    renderizar()
+    })
+    
     // Evento nos input de realidade
     document.querySelectorAll('.input-realidade').forEach(input => {
         input.addEventListener('change', function() {
@@ -479,7 +532,7 @@ function adicionarEventoContas() {
             const total = dadosMeses[mesAtual].contasFixas.itens
                 .reduce((soma, i) => soma + i.realidade, 0)
             document.getElementById('totalRealidadeContas').textContent = formatarMoeda(total)
-
+            dadosMeses[mesAtual].contasFixas.realidade = total
         })
     })
     
@@ -497,8 +550,22 @@ function adicionarEventoContas() {
             this.classList.toggle('ativo')
 
             // Atualiza a cor da linha
-            const linha = this.closest('tr')
-            linha.classList.toggle('conta-paga')
+            this.closest('tr').classList.toggle('conta-paga')
+        })
+    })
+
+    // Botão remover
+    document.querySelectorAll('.btn-remover').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const id = parseInt(this.dataset.id)
+            dadosMeses[mesAtual].contasFixas.itens = 
+                dadosMeses[mesAtual].contasFixas.itens.filter(i => i.id !== id)
+            
+            dadosMeses[mesAtual].contasFixas.estimativa =
+                dadosMeses[mesAtual].contasFixas.itens
+                    .reduce((soma, i) => soma + i.estimativa, 0)
+
+            renderizar()
         })
     })
 }
@@ -698,9 +765,12 @@ function adicionarEventosRefeicoes() {
 // Gera HTML da tela de Outros Gastos
 function renderizarOutros(dados) {
     const itens = dados.outrosGastos.itens
-    const totalGastos = itens.reduce((soma, item) => soma + item.valor, 0)
+    const extras = dados.outrosGastos.receitasExtras || []
 
-    const linhas = itens.length === 0
+    const totalGastos = itens.reduce((soma, item) => soma + item.valor, 0)
+    const totalExtras = itens.reduce((soma, item) => soma + item.valor, 0)
+
+    const linhasGastos = itens.length === 0
         ? '<tr><td colspan="3" style="text-align:center; color:#999; padding:20px;">Nenhum gasto registrado</td></tr>'
         : itens.map(item => `
             <tr>
@@ -712,13 +782,62 @@ function renderizarOutros(dados) {
                 </td>
             </tr>
             `).join('')
+
+    const linhasExtras = extras.length === 0
+            ? '<tr><td colspan="3" style="text-align:center; color:#999; padding:20px;">Nenhuma receita registrada</td></tr>'
+            : extras.map(item => `
+                <tr>
+                    <td>${item.descricao}</td>
+                    <td class="valor-estimativa">${item.data}</td>
+                    <td class="valor-item positivo">
+                        +${formatarMoeda(item.valor)}
+                        <button class="btn-remover" data-id="${item.id}" data-tipo="extra">⊗<button>
+                    </td>
+                </tr>
+            `).join('')
     return `
-        <h2 class="secao-titulo">Outros Gastos</h2>
+        <h2 class="secao-titulo">Outros</h2>
 
         <div class="resumo-categoria">
-            <span>Estimativa: <strong>${formatarMoeda(dados.outrosGastos.estimativa)}</strong></span>
-            <span>Gasto: <strong id="totalOutros">${formatarMoeda(totalGastos)}</strong></span>
+            <span>Estimativa gastos: <strong>${formatarMoeda(dados.outrosGastos.estimativa)}</strong></span>
+            <span>Saldo: <strong id="totalOutros" class="${totalExtras - totalGastos >= 0 ? 'positivo' : 'negativo'}">
+                ${formatarMoeda(totalExtras - totalGastos)}
+            </strong></span>
         </div>
+
+        <!-- SEÇÃO: RECEITAS EXTRAS -->
+        <div class="salario-secao" style="margin-bottom: 20px">
+                <h3 class="salario-titulo">Receitas Extras</h3>
+
+                <div class="form-adicionar">
+                    <div class="form-group">
+                        <label>Descrição:</label>
+                        <input type="text" id="inputDescricaoExtra" placeholder="Ex: Auxílio do leite">
+                    </div>
+                    <div class="form-inline">
+                        <span class="simbolo-moeda">¥</span>
+                        <input type="number" id="inputValorExtra" placeholder="Digite">
+                        <button class="btn-adicionar" id="btnAdicionarExtra">+</button>
+                    </div>
+                </div>
+
+                <table class="tabela-resumo">
+                    <thead>
+                        <tr><th>Descrição</th><th>Data</th><th>Valor</th></tr>
+                    </thead>
+                    <tbody>${linhasExtras}</tbody>
+                    <tfoot>
+                        <tr class="linha-saldo">
+                            <td colspan="2"><strong>Total receitas:</strong></td>
+                            <td class="positivo"><strong>+${formatarMoeda(totalExtras)}</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        
+        <!-- SEÇÃO: GASTOS -->
+        <div class="salario-secao">
+            <h3 class="salario-titulo">Gastos</h3>
 
         <div class="form-adicionar">
             <div class="form-group">
@@ -740,15 +859,21 @@ function renderizarOutros(dados) {
                     <th>Valor</th>
                 </tr>
             </thead>
-            <tbody id="listaOutros">
-                ${linhas}
-            </tbody>
+            <tbody>${linhasGastos}</tbody>
+            <tfoot>
+                <tr class="linha-saldo">
+                    <td colspan="2"><strong>Total gastos:</strong></td>
+                    <td><strong>${formatarMoeda(totalGastos)}</strong></td>
+                </tr>
+            </tfoot>
         </table>
+    </div>
     `
 }
 
 function adicionarEventosOutros() {
 
+    // Botão adicionar GASTO
     document.getElementById('btnAdicionar').addEventListener('click', function () {
         const descricao = document.getElementById('inputDescricao').value.trim()
         const valor = parseInt(document.getElementById('inputValor').value) || 0
@@ -761,26 +886,55 @@ function adicionarEventosOutros() {
         const hoje = new Date()
         const dia = String(hoje.getDate()).padStart(2, '0')
         const mes = String(hoje.getMonth() + 1).padStart(2, '0')
-        const dataFormatada = dia + '/' + mes
-
-        const novoItem = {
+        
+        dadosMeses[mesAtual].outrosGastos.itens.push({
             id: Date.now(),
-            descricao: descricao,
-            valor: valor,
-            data: dataFormatada
-        }
+            descricao,
+            valor,
+            data: dia + '/' + mes
+        })
 
-        dadosMeses[mesAtual].outrosGastos.itens.push(novoItem)
         renderizar()
     })
 
-    document.querySelectorAll('.btn-remover').forEach(btn => {
+    // Botão adicionar RECEITA EXTRA
+    document.getElementById('btnAdicionarExtra').addEventListener('click', function () {
+        const descricao = document.getElementById('inputDescricaoExtra').value.trim()
+        const valor = parseInt(document.getElementById('inputValorExtra').value) || 0
+
+        if (!descricao || valor <=0) {
+            alert('Preencha a descrição e um valor válido!')
+            return
+        }
+
+        const hoje = new Date()
+        const dia = String(hoje.getDate()).padStart(2, '0')
+        const mes = String(hoje.getMonth() + 1).padStart(2, '0')
+
+        dadosMeses[mesAtual].outrosGastos.receitasExtras.push({
+            id: Date.now(),
+            descricao,
+            valor,
+            data: dia + '/' + mes
+        })
+
+        renderizar()
+    })
+
+    // Botões remover
+        document.querySelectorAll('.btn-remover').forEach(btn => {
         btn.addEventListener('click', function() {
             const id = parseInt(this.dataset.id)
-            dadosMeses[mesAtual].outrosGastos.itens = dadosMeses[mesAtual].outrosGastos.itens
-                .filter(item => item.id !== id)
+            const tipo = this.dataset.tipo
 
-                renderizar()
+            if (tipo === 'extra') {
+                dadosMeses[mesAtual].outrosGastos.receitasExtras =
+                    dadosMeses[mesAtual].outrosGastos.receitasExtras.filter(i => i.id !== id)
+            } else {
+                dadosMeses[mesAtual].outrosGastos.itens =
+                    dadosMeses[mesAtual].outrosGastos.itens.filter(i => i.id !== id)
+            }            
+            renderizar()
         })
     })
 }
@@ -979,12 +1133,57 @@ function adicionarEventosCartao() {
     })
 }
 
+// Função copiar contas do mês anterior
+function copiarContasDoMesAnterior(mesAtual) {
+    const meses = Object.keys(dadosMeses).sort()
+    const indexAtual = meses.indexOf(mesAtual)
+
+    // Não tem mes anterior
+    if (indexAtual <= 0) return
+
+    const mesAnterior = meses[indexAtual - 1]
+
+    // CONTAS FIXAS
+    const itensAnteriores = dadosMeses[mesAnterior].contasFixas.itens
+
+    // Copia cada item, resetando realidade e pago
+    dadosMeses[mesAtual].contasFixas.itens = itensAnteriores.map(item => ({
+        ...item,
+        id: Date.now() + Math.random(), // id único para cada item
+        realidade: 0,
+        pago: false
+    }))
+
+    // Recalcula estimativa
+    dadosMeses[mesAtual].contasFixas.estimativa =
+        dadosMeses[mesAtual].contasFixas.itens
+            .reduce((soma, i) => soma + i.estimativa, 0)
+
+    // CARTÃO PARCELADO
+    const parceladosAnteriores = dadosMeses[mesAnterior].cartaoCredito.itens
+        .filter(item => item.totalParcelas > 1 && item.parcelaAtual < item.totalParcelas)
+
+    const parceladosCopias = parceladosAnteriores.map(item => ({
+        ...item,
+        id: Date.now() + Math.random(),
+        parcelaAtual: item.parcelaAtual + 1
+    }))
+
+    dadosMeses[mesAtual].cartaoCredito.itens.push(...parceladosCopias)
+}
+
 // Função principal de renderização
 function renderizar() {
     // Verifica se um mês foi selecionado
     if (!mesAtual) {
         conteudoPrincipal.innerHTML = '<p>Selecione um mês</p>'
         return
+    }
+
+    const contas = dadosMeses[mesAtual].contasFixas.itens
+    if (!dadosMeses[mesAtual].inicializado) {
+        copiarContasDoMesAnterior(mesAtual)
+        dadosMeses[mesAtual].inicializado = true
     }
 
     // Busca os dados do mês selecionado
