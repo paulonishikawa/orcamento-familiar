@@ -2,12 +2,20 @@
 // ORÇAMENTO FAMILIAR - SERVIDOR
 // ==============================
 
+require('dotenv').config()
 const express = require('express')
+const mongoose = require('mongoose')
+
 const app = express()
-const PORTA = 3000
+const PORTA = process.env.PORT || 3000
 
 // Middleware - permite o servidor ler JSON no corpo das requisições
 app.use(express.json())
+
+// Conexão com o MongoDB
+mongoose.connect(process.env.MONGODB_URI)
+    .then(() => console.log('MongoDB conectado!'))
+    .catch(err => console.log('Erro ao conectar:', err))
 
 // Rota de teste - GET /
 app.get('/', function(req, res) {
