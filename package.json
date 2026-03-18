@@ -1,0 +1,27 @@
+{
+  "name": "orcamento-familiar",
+  "version": "1.0.0",
+  "description": "��O\u0000r\u0000�\u0000a\u0000m\u0000e\u0000n\u0000t\u0000o\u0000 \u0000F\u0000a\u0000m\u0000i\u0000l\u0000i\u0000a\u0000r\u0000\r\u0000 \u0000",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/paulonishikawa/orcamento-familiar.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/paulonishikawa/orcamento-familiar/issues"
+  },
+  "homepage": "https://github.com/paulonishikawa/orcamento-familiar#readme",
+  "dependencies": {
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
