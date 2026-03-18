@@ -1172,6 +1172,22 @@ function copiarContasDoMesAnterior(mesAtual) {
     dadosMeses[mesAtual].cartaoCredito.itens.push(...parceladosCopias)
 }
 
+// Salva todos os dados no LocalStorage
+function salvarDados() {
+    localStorage.setItem('orcamento-familiar', JSON.stringify(dadosMeses))
+}
+
+// Carrega os dados salvos (se existirem)
+function carregarDados() {
+    const dadosSalvos = localStorage.getItem('orcamento-familiar')
+
+    if (dadosSalvos) {
+        // Tinha dados salvos - substitui os dados iniciais
+        dadosMeses = JSON.parse(dadosSalvos)
+    }
+    // Se não tinha nada, dadosMeses continua com os meses vazios do inicio
+}
+
 // Função principal de renderização
 function renderizar() {
     // Verifica se um mês foi selecionado
@@ -1179,12 +1195,14 @@ function renderizar() {
         conteudoPrincipal.innerHTML = '<p>Selecione um mês</p>'
         return
     }
-
+    
     const contas = dadosMeses[mesAtual].contasFixas.itens
     if (!dadosMeses[mesAtual].inicializado) {
         copiarContasDoMesAnterior(mesAtual)
         dadosMeses[mesAtual].inicializado = true
     }
+
+    salvarDados()
 
     // Busca os dados do mês selecionado
     const dados = dadosMeses[mesAtual]
@@ -1214,3 +1232,5 @@ function renderizar() {
         conteudoPrincipal.innerHTML = `<h2 class="secao-titulo">${opcaoAtual}</h2><p>Em desenvolvimento</p>`
     }
 }
+
+carregarDados()
