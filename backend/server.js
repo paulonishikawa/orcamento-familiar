@@ -13,6 +13,9 @@ const PORTA = process.env.PORT || 3000
 // Middleware - permite o servidor ler JSON no corpo das requisições
 app.use(express.json())
 
+const cors = require('cors')
+app.use(cors())
+
 // Conexão com o MongoDB
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log('MongoDB conectado!'))
@@ -38,7 +41,7 @@ app.put('/meses/:mesId', async function(req, res) {
         const { mesId } = req.params
         const { dados } = req.body
 
-        const mes = await Mes.findOneAndUptdate(
+        const mes = await Mes.findOneAndUpdate(
             { mesId },              // procura por este mesId
             { mesId, dados },       // atualiza com estes dados
             { upsert: true, new: true } // cria se não existir
@@ -46,6 +49,7 @@ app.put('/meses/:mesId', async function(req, res) {
 
         res.json(mes)
     } catch (err) {
+        console.log('ERRO DETALHADO', err.message)
         res.status(500).json({ erro: 'Erro ao salvar mês' })
     }
 })

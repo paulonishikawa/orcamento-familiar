@@ -1172,20 +1172,41 @@ function copiarContasDoMesAnterior(mesAtual) {
     dadosMeses[mesAtual].cartaoCredito.itens.push(...parceladosCopias)
 }
 
-// Salva todos os dados no LocalStorage
-function salvarDados() {
-    localStorage.setItem('orcamento-familiar', JSON.stringify(dadosMeses))
+const API = 'http://localhost:3000'
+
+// Salva um mês específico no backend
+async function salvarDados() {
+    if (!mesAtual) return
+
+    try {
+        await fetch(`${API}/meses/${mesAtual}`, {
+            method: 'PUT',
+            headers: { 'Content-type': 'application/json' },
+            body: JSON.stringify({ dados: dadosMeses[mesAtual] })
+        })
+    } catch (err) {
+        console.log('Erro ao salvar - usando LocalStorage como backup')
+        localStorage.setItem('orcamento-familiar', JSON.stringify(dadosMeses))
+    }
 }
 
-// Carrega os dados salvos (se existirem)
-function carregarDados() {
-    const dadosSalvos = localStorage.getItem('orcamento-familiar')
+// Carrega todos os meses do backend
+async function carregarDados() {
+    try {
+        const resposta = await fetch(`${API}/meses`)
+        const meses = await resposta.json()
 
-    if (dadosSalvos) {
-        // Tinha dados salvos - substitui os dados iniciais
-        dadosMeses = JSON.parse(dadosSalvos)
+        // Se veio dados do servidor, usa eles
+        if (meses.length > 0) {
+            meses.forEach(mes => {
+                dadosMeses[mes.mesId] = mes.dados
+            })
+        }
+    } catch (err) {
+        console.log('Servidor offline - carregando do LocalStorage')
+        const dadosSalvos = localStorage.getItem('orcamento-familiar')
+        if (dadosSalvos) dadosMeses = JSON.parse(dadosSalvos)
     }
-    // Se não tinha nada, dadosMeses continua com os meses vazios do inicio
 }
 
 // Função principal de renderização
@@ -1233,4 +1254,6 @@ function renderizar() {
     }
 }
 
-carregarDados()
+carregarDados().then(() => {
+    console.log('Dados carregados!')
+})
