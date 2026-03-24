@@ -1174,6 +1174,11 @@ function copiarContasDoMesAnterior(mesAtual) {
 
 const API = 'http://localhost:3000'
 
+// Pega o token salvo no localStorage
+function getToken() {
+    return localStorage.getItem('token')
+}
+
 // Salva um mês específico no backend
 async function salvarDados() {
     if (!mesAtual) return
@@ -1181,7 +1186,10 @@ async function salvarDados() {
     try {
         await fetch(`${API}/meses/${mesAtual}`, {
             method: 'PUT',
-            headers: { 'Content-type': 'application/json' },
+            headers: { 
+                'Content-type': 'application/json',
+                'authorization': getToken()
+            },
             body: JSON.stringify({ dados: dadosMeses[mesAtual] })
         })
     } catch (err) {
@@ -1193,7 +1201,16 @@ async function salvarDados() {
 // Carrega todos os meses do backend
 async function carregarDados() {
     try {
-        const resposta = await fetch(`${API}/meses`)
+        const resposta = await fetch(`${API}/meses`, {
+            headers: { 'authorization': getToken() }
+        })
+
+        // Token inválido ou expirado - vai para o login
+        if (resposta.status === 401) {
+            mostrarLogin()
+            return
+        }
+
         const meses = await resposta.json()
 
         // Se veio dados do servidor, usa eles
@@ -1207,6 +1224,64 @@ async function carregarDados() {
         const dadosSalvos = localStorage.getItem('orcamento-familiar')
         if (dadosSalvos) dadosMeses = JSON.parse(dadosSalvos)
     }
+}
+
+// Mostra a tela de login
+function mostrarLogin() {
+    conteudoPrincipal.innerHTML = `
+        <div style="max-width:300px; margin:60px auto; text-align:center">
+            <h2 class="secao-titulo">🔐 Login</h2>
+            <div class="form-adicionar">
+                <div class="form-group">
+                    <label>Usuário:</label>
+                    <input type="text" id="inputLogin" placeholder="Digite o usuário">
+                </div>
+                <div class="form-group" style="margin-top:10px">
+                    <label>Senha:</label>
+                    <input type="password" id="inputSenha" placeholder="Digite a senha">
+                </div>
+                <button class="btn-adicionar" id="btn="btnLogin"
+                    style="width:100%; margin-top:15px; padding:12px">
+                    Entrar
+                </button>
+                <p id="erroLogin" style="color:red; margin-top:10px"></p>
+            </div>
+        </div>
+    `
+
+    setTimeout(() => {
+        document.getElementById('btnLogin').addEventListener('click', async function() {
+            const login = document.getElementById('inputLogin').value.trim()
+            const senha = document.getElementById('inputSenha').value
+
+            if (!login || !senha) {
+                document.getElementById('erroLogin').textContent = 'Preencha todos os campos'
+                return
+            }
+
+            try {
+                const resposta = await fetch(`${API}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ login, senha })
+                })
+
+                const dados = await resposta.json()
+
+                if (resposta.status === 401) {
+                    document.getElementById('erroLogin').textContent = dados.erro
+                    return
+                }
+
+                // Salva o token e carrega o app
+                localStorage.setItem('token', dados.token)
+                carregarDados ().then(() => renderizar())
+
+            } catch (err) {
+                document.getElementById('erroLogin').textContent = 'Erro ao conectar ao servidor'
+            }
+        })
+    }, 0)
 }
 
 // Função principal de renderização
@@ -1255,5 +1330,5 @@ function renderizar() {
 }
 
 carregarDados().then(() => {
-    console.log('Dados carregados!')
+    if (getToken()) renderizar()
 })
