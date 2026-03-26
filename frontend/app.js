@@ -1172,7 +1172,7 @@ function copiarContasDoMesAnterior(mesAtual) {
     dadosMeses[mesAtual].cartaoCredito.itens.push(...parceladosCopias)
 }
 
-const API = 'http://localhost:3000'
+const API = 'https://api-orcamento-q4iy.onrender.com'
 
 // Pega o token salvo no localStorage
 function getToken() {
@@ -1207,8 +1207,7 @@ async function carregarDados() {
 
         // Token inválido ou expirado - vai para o login
         if (resposta.status === 401) {
-            mostrarLogin()
-            return
+            return false
         }
 
         const meses = await resposta.json()
@@ -1219,15 +1218,23 @@ async function carregarDados() {
                 dadosMeses[mes.mesId] = mes.dados
             })
         }
+        return true
+
     } catch (err) {
         console.log('Servidor offline - carregando do LocalStorage')
         const dadosSalvos = localStorage.getItem('orcamento-familiar')
         if (dadosSalvos) dadosMeses = JSON.parse(dadosSalvos)
+        return true
     }
 }
 
 // Mostra a tela de login
 function mostrarLogin() {
+
+    // Esconde os dropdowns enquanto não está logado
+    mesSelect.style.display = 'none'
+    opcaoSelect.style.display = 'none'
+
     conteudoPrincipal.innerHTML = `
         <div style="max-width:300px; margin:60px auto; text-align:center">
             <h2 class="secao-titulo">🔐 Login</h2>
@@ -1240,7 +1247,7 @@ function mostrarLogin() {
                     <label>Senha:</label>
                     <input type="password" id="inputSenha" placeholder="Digite a senha">
                 </div>
-                <button class="btn-adicionar" id="btn="btnLogin"
+                <button class="btn-adicionar" id="btnLogin"
                     style="width:100%; margin-top:15px; padding:12px">
                     Entrar
                 </button>
@@ -1275,6 +1282,8 @@ function mostrarLogin() {
 
                 // Salva o token e carrega o app
                 localStorage.setItem('token', dados.token)
+                mesSelect.style.display = ''
+                opcaoSelect.style.display = ''
                 carregarDados ().then(() => renderizar())
 
             } catch (err) {
@@ -1329,6 +1338,12 @@ function renderizar() {
     }
 }
 
-carregarDados().then(() => {
-    if (getToken()) renderizar()
+carregarDados().then(autenticado => {
+    if (autenticado) {
+        mesSelect.style.display = '' // restaura display original
+        opcaoSelect.style.display = ''
+        renderizar()
+    } else {
+        mostrarLogin()
+    }
 })
