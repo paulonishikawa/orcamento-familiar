@@ -50,5 +50,16 @@
 
             <!-- JAVASCRIPT -->
              <script src="app.js"></script>
+            
+            <link rel="manifest" href="manifest.json">
+
+            <script>
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.register('service-worker.js')
+                        .then(() => console.log('Service Worker registrado!'))
+                        .catch(err => console.log('Erro no SW:', err))
+                }
+            </script>
+    
     </body>
 </html>
