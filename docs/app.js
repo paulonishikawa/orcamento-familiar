@@ -27,11 +27,11 @@ function criarMesVazio() {
             itens: [] 
         },
 
-        mercado: { estimativa: 40000, realidade: 0, itens: [] },
-        refeicoes: { estimativa: 15000, realidade: 0, itens: [] },
-        cartaoCredito: { estimativa: 70000, realidade: 0, itens: [] },
+        mercado: { estimativa: 0, realidade: 0, itens: [] },
+        refeicoes: { estimativa: 0, realidade: 0, itens: [] },
+        cartaoCredito: { estimativa: 0, realidade: 0, itens: [] },
         outrosGastos: { 
-            estimativa: 10000, 
+            estimativa: 0, 
             realidade: 0, 
             itens: [],
             receitasExtras: []
@@ -50,6 +50,104 @@ let mesAtual = ""
 let opcaoAtual = "resumo"
 let abaCartao = "avista"
 
+const NOMES_MESES = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril',
+    'Maio', 'Junho', 'Julho', 'Agosto',
+    'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+]
+
+// Atualiza o select de meses com os meses salvos
+function atualizarSelectMeses() {
+    const meses = Object.keys(dadosMeses).sort()
+
+    mesSelect.innerHTML = '<option value="">selecione</option>'
+
+    meses.forEach(mesId => {
+        const [ano, mes] = mesId.split('-')
+        const nome = `${NOMES_MESES[parseInt(mes) - 1]} ${ano}`
+        const option = document.createElement('option')
+        option.value = mesId
+        option.textContent = nome
+        if (mesId === mesAtual) option.selected = true
+        mesSelect.appendChild(option)
+    })
+}
+
+// Mostra o formulário de novo mês
+function mostrarFormNovoMes() {
+    const hoje = new Date()
+    const anoAtual = hoje.getFullYear()
+
+    // Gera options dos meses
+    const optionsMeses = NOMES_MESES.map((nome, i) => {
+        const num = String(i + 1).padStart(2, '0')
+        return `<option value="${num}">${nome}</option>`
+    }).join('')
+
+    // Gera options dos anos (atual e próximos 2)
+    const optionsAnos = [anoAtual, anoAtual + 1, anoAtual + 2]
+        .map(ano => `<option value="${ano}">${ano}</option>`)
+        .join('')
+
+    conteudoPrincipal.innerHTML = `
+        <div style="max-width:300px; margin:40px auto">
+            <h2 class="secao-titulo">➕ Novo Mês</h2>
+            <div class="form-adicionar">
+                <div class="form-group">
+                    <label>Mês:</label>
+                    <select id="selectNovoMes" style="width:100%; padding:8px">
+                        ${optionsMeses}
+                    </select>
+                </div>
+                <div class="form-group" style="margin-top:10px">
+                    <label>Ano:</label>
+                    <select id="selectNovoAno" style="width:100%; padding:8px">
+                        ${optionsAnos}
+                    </select>
+                </div>
+                <div style="display:flex; gap:8px; margin-top:15px">
+                    <button class="btn-adicionar" id="btnConfirmarNovoMes"
+                        style="flex:1; padding:12px; font-size:14px">Criar mês</button>
+                    <button class="btn-adicionar" id="btnCancelarNovoMes"
+                        style="flex:1; padding:12px; background:#999; font-size:14px">Cancelar</button>
+                </div>
+                <p id="erroNovoMes" style="color:red; margin-top:10px"></p>
+            </div>
+        </div>
+    `
+
+    setTimeout(() => {
+        document.getElementById('btnConfirmarNovoMes').addEventListener('click', function() {
+            const mes = document.getElementById('selectNovoMes').value
+            const ano = document.getElementById('selectNovoAno').value
+            const mesId = `${ano}-${mes}`
+
+            // Verifica se já existe
+            if (dadosMeses[mesId]) {
+                document.getElementById('erroNovoMes').textContent = 'Este mês já existe!'
+                return
+            }
+
+            // Cria o mês vazio
+            dadosMeses[mesId] = criarMesVazio()
+
+            // Atualiza o select e seleciona o novo mês
+            atualizarSelectMeses()
+            mesAtual = mesId
+            mesSelect.value = mesId
+
+            // Renderiza (vai acionar a cópia do mês anterior automaticamente)
+            opcaoAtual = 'resumo'
+            opcaoSelect.value = 'resumo'
+            renderizar()
+        })
+
+        document.getElementById('btnCancelarNovoMes').addEventListener('click', function() {
+            renderizar()
+        })
+    }, 0)
+}
+
 // Capturar elementos do HTML
 const mesSelect = document.getElementById('mesSelect')
 const opcaoSelect = document.getElementById('opcaoSelect')
@@ -64,6 +162,10 @@ mesSelect.addEventListener('change', function() {
 opcaoSelect.addEventListener('change', function () {
     opcaoAtual = opcaoSelect.value
     renderizar()
+})
+
+document.getElementById('btnNovoMes').addEventListener('click', function() {
+    mostrarFormNovoMes()
 })
 
 // ==============================
@@ -1363,7 +1465,10 @@ function mostrarLogin() {
                 localStorage.setItem('token', dados.token)
                 mesSelect.style.display = ''
                 opcaoSelect.style.display = ''
-                carregarDados ().then(() => renderizar())
+                carregarDados ().then(() => {
+                    atualizarSelectMeses()
+                    renderizar()
+                })
 
             } catch (err) {
                 document.getElementById('erroLogin').textContent = 'Erro ao conectar ao servidor'
@@ -1457,6 +1562,7 @@ carregarDados().then(autenticado => {
     if (autenticado) {
         mesSelect.style.display = '' // restaura display original
         opcaoSelect.style.display = ''
+        atualizarSelectMeses()
         renderizar()
     } else {
         mostrarLogin()
