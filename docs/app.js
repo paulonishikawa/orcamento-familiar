@@ -89,7 +89,7 @@ function htmlEstimativa(categoria, valorEstimativa) {
         style="margin-botton:10px">
         <div class="form-inline">
             <span class="simbolo-moeda">¥</span>
-            <input type="number" id=inputEstimativa"
+            <input type="number" id="inputEstimativa"
                 value="${valorEstimativa}" placeholder="0">
             <button class="btn-adicionar" id="btnConfirmarEstimativa">✓</button>
         </div>
@@ -1379,7 +1379,7 @@ function adicionarEventosEstimativa() {
 
     btnEditar.addEventListener('click', function() {
         const formEst = document.getElementById('formEstimativa')
-        const estaEditando = formEst.style.display !== 'none'
+        const estaEditando = formEst.style.display === 'block'
 
         if (estaEditando) {
             formEst.style.display = 'none'
@@ -1389,7 +1389,7 @@ function adicionarEventosEstimativa() {
         }
     })
 
-    const btnConfirmar = document.getElementById('btnconfirmarEstimativa')
+    const btnConfirmar = document.getElementById('btnConfirmarEstimativa')
     if (!btnConfirmar) return
 
     btnConfirmar.addEventListener('click', function() {
