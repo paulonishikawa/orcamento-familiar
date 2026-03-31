@@ -298,7 +298,7 @@ main p {
 
 .salario-bruto {
     display: flex;
-    justify-content: space-betwen;
+    justify-content: space-between;
     padding: 10px 0;
     margin-top: 8px;
     border-top: 2px solid #28a745;

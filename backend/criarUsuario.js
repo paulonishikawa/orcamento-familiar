@@ -7,7 +7,7 @@ async function criarUsuario() {
     await mongoose.connect(process.env.MONGODB_URI)
 
     // Verifica se já existe
-    const existe = await Usuario.findOne({ login: 'familia '})
+    const existe = await Usuario.findOne({ login: 'familia'})
     if (existe) {
         console.log('Usuário já existe!')
         process.exit()

@@ -10,6 +10,7 @@ function criarMesVazio() {
         salarios: { 
             estimativa: 0, 
             realidade: 0, 
+            modoEstimativa: 'calculo',
             valorHora: 1700,
             diasDiurnos: 10,
             diasNoturnos: 10,
@@ -72,6 +73,28 @@ opcaoSelect.addEventListener('change', function () {
 // Função para formatar valores em Ienes
 function formatarMoeda(valor) {
     return '¥' + valor.toLocaleString('ja-JP')
+}
+
+// Gera o bloco de estimativa editável (usado em todas as categorias)
+function htmlEstimativa(categoria, valorEstimativa) {
+    return `
+    <div class="resumo-categoria">
+        <span>Estimativa:
+            <strong id="textoEstimativa">${formatarMoeda(valorEstimativa)}</strong>
+            <button class="btn-editar-est" data-categoria="${categoria}"
+                title="editar estimativa">✏️</button>
+        </span>
+    </div>
+    <div id="formEstimativa" style="display:none" class="form-adicionar"
+        style="margin-botton:10px">
+        <div class="form-inline">
+            <span class="simbolo-moeda">¥</span>
+            <input type="number" id=inputEstimativa"
+                value="${valorEstimativa}" placeholder="0">
+            <button class="btn-adicionar" id="btnConfirmarEstimativa">✓</button>
+        </div>
+    </div>
+  `   
 }
 
 // Função para calcular totais do resumo
@@ -172,10 +195,22 @@ function calcularSalario(s) {
 function renderizarSalario(dados) {
     const s = dados.salarios
     const c = calcularSalario(s)
+    const modo = s.modoEstimativa || 'calculo' 
 
     return `
         <h2 class="secao-titulo">Salário</h2>
 
+        <div class="abas-cartao">
+            <button class="aba-btn ${modo === 'calculo' ? 'ativa' : ''}" data-modo="calculo">
+                📊 Cálculo por horas
+            </button>
+            <button class="aba-btn ${modo === 'simples' ? 'ativa' : ''}" data-modo="simples">
+                ✏️ Valor simples
+            </button>
+        </div>
+
+        ${ modo === 'calculo' ? `
+            
         <div class="salario-secao">
             <h3 class="salario-titulo">⚙️ configuração</h3>
             <div class="salario-linha">
@@ -293,6 +328,22 @@ function renderizarSalario(dados) {
             </span>
         </div>
 
+        ` : `
+
+        <div class="salario-secao" style="margin-top:15px">
+            <h3 class="salario-titulo">💰 Estimativa</h3>
+            <div class="salario-linha">
+                <label>Valor estimado (¥):</label>
+                <div class="salario-calc">
+                    <span class="simbolo-moeda">¥</span>
+                    <input type="number" class="input-salario largo" id="estimativaSimples"
+                        value="${s.estimativa || ''}" placeholder="0">
+                </div>
+            </div>
+        </div>
+
+        `}
+
         <div class="salario-secao" style="margin-top:15px">
             <h3 class="salario-titulo">✅ Realidade</h3>
             <div class="salario-linha">
@@ -309,8 +360,19 @@ function renderizarSalario(dados) {
 
 // Função para adicionar eventos Salario
 function adicionarEventosSalario() {
+    const s = dadosMeses[mesAtual].salarios
+    const modo = s.modoEstimativa || 'calculo'
 
-    // Campos que disparam recálculo completo da tela
+    // Troca de abas
+    document.querySelectorAll('.aba-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            dadosMeses[mesAtual].salarios.modoEstimativa = this.dataset.modo
+            renderizar()
+        })
+    })
+
+    if (modo === 'calculo') {
+        // Campos que disparam recálculo completo da tela
     const campos = ['valorHora', 'diasDiurnos', 'diasNoturnos',
                     'hesDiurnas', 'hesNoturnas']
     
@@ -321,7 +383,6 @@ function adicionarEventosSalario() {
         input.addEventListener('input', function () {
             dadosMeses[mesAtual].salarios[campo] = parseFloat(this.value) || 0
 
-        // Recalcula tudo
         const s = dadosMeses[mesAtual].salarios
         const c = calcularSalario(s)
 
@@ -338,12 +399,22 @@ function adicionarEventosSalario() {
         })
     })
 
-    // Campo de realidade - salva o valor real digitado
+} else {
+    // Modo simples - salva o valor digitado como estimativa
+    const inputSimples = document.getElementById('estimativaSimples')
+    if (inputSimples) {
+        inputSimples.addEventListener('input', function() {
+            dadosMeses[mesAtual].salarios.estimativa = parseInt(this.value) || 0
+
+        })
+    }
+}
+
+    // Campo de realidade - (igual nos dois modos)
     const inputRealidade = document.getElementById('salarioRealidade')
     if (inputRealidade) {
         inputRealidade.addEventListener('input', function() {
-            const valor = parseInt(this.value) || 0
-            dadosMeses[mesAtual].salarios.realidade = valor
+            dadosMeses[mesAtual].salarios.realidade = parseInt(this.value) || 0
         })
     }
 }
@@ -585,14 +656,14 @@ function renderizarMercado(dados) {
                     ${formatarMoeda(item.valor)}
                     <button class="btn-remover" data-id="${item.id}">⊗</button>
                 </td>
-            </td>
+            </tr>
         `).join('')
 
         return `
             <h2 class="secao-titulo">Mercado</h2>
 
+            ${htmlEstimativa('mercado', dados.mercado.estimativa)}
             <div class="resumo-categoria">
-                <span>Estimativa: <strong>${formatarMoeda(dados.mercado.estimativa)}</strong></span>
                 <span>Gasto: <strong id="totalMercado">${formatarMoeda(totalGasto)}</strong></span>
             </div>
 
@@ -670,6 +741,8 @@ function adicionarEventosMercado() {
             renderizar()
         })
     })
+
+    adicionarEventosEstimativa()
 }
 
 // Gera HTML da tela de Refeições
@@ -693,8 +766,8 @@ function renderizarRefeicoes(dados) {
 return `
         <h2 class="secao-titulo">Refeições</h2>
 
+        ${htmlEstimativa('refeicoes', dados.refeicoes.estimativa)}
         <div class="resumo-categoria">
-            <span>Estimativa: <strong>${formatarMoeda(dados.refeicoes.estimativa)}</strong></span>
             <span>Gasto: <strong id="totalRefeicoes">${formatarMoeda(totalGasto)}</strong></span>
         </div>
 
@@ -760,6 +833,8 @@ function adicionarEventosRefeicoes() {
             renderizar()
         })
     })
+
+    adicionarEventosEstimativa()
 }
 
 // Gera HTML da tela de Outros Gastos
@@ -768,7 +843,7 @@ function renderizarOutros(dados) {
     const extras = dados.outrosGastos.receitasExtras || []
 
     const totalGastos = itens.reduce((soma, item) => soma + item.valor, 0)
-    const totalExtras = itens.reduce((soma, item) => soma + item.valor, 0)
+    const totalExtras = extras.reduce((soma, item) => soma + item.valor, 0)
 
     const linhasGastos = itens.length === 0
         ? '<tr><td colspan="3" style="text-align:center; color:#999; padding:20px;">Nenhum gasto registrado</td></tr>'
@@ -791,15 +866,15 @@ function renderizarOutros(dados) {
                     <td class="valor-estimativa">${item.data}</td>
                     <td class="valor-item positivo">
                         +${formatarMoeda(item.valor)}
-                        <button class="btn-remover" data-id="${item.id}" data-tipo="extra">⊗<button>
+                        <button class="btn-remover" data-id="${item.id}" data-tipo="extra">⊗</button>
                     </td>
                 </tr>
             `).join('')
     return `
         <h2 class="secao-titulo">Outros</h2>
 
+        ${htmlEstimativa('outrosGastos', dados.outrosGastos.estimativa)}
         <div class="resumo-categoria">
-            <span>Estimativa gastos: <strong>${formatarMoeda(dados.outrosGastos.estimativa)}</strong></span>
             <span>Saldo: <strong id="totalOutros" class="${totalExtras - totalGastos >= 0 ? 'positivo' : 'negativo'}">
                 ${formatarMoeda(totalExtras - totalGastos)}
             </strong></span>
@@ -937,6 +1012,8 @@ function adicionarEventosOutros() {
             renderizar()
         })
     })
+
+    adicionarEventosEstimativa()
 }
 
 // Gera HTML da tela de Cartão de Crédito
@@ -985,8 +1062,8 @@ function renderizarCartao(dados) {
     return `
         <h2 class="secao-titulo">Cartão de Crédito</h2>
 
+        ${htmlEstimativa('cartaoCredito', dados.cartaoCredito.estimativa)}
         <div class="resumo-categoria">
-            <span>Estimativa: <strong>${formatarMoeda(dados.cartaoCredito.estimativa)}</strong></span>
             <span>Total mês: <strong>${formatarMoeda(totalAvista + totalParcelado)}</strong></span>
         </div>
 
@@ -1131,6 +1208,8 @@ function adicionarEventosCartao() {
             renderizar()
         })
     })
+
+    adicionarEventosEstimativa()
 }
 
 // Função copiar contas do mês anterior
@@ -1291,6 +1370,42 @@ function mostrarLogin() {
             }
         })
     }, 0)
+}
+
+// Adiciona eventos do botão lápis (usado em todas as categorias)
+function adicionarEventosEstimativa() {
+    const btnEditar = document.querySelector('.btn-editar-est')
+    if (!btnEditar) return
+
+    btnEditar.addEventListener('click', function() {
+        const formEst = document.getElementById('formEstimativa')
+        const estaEditando = formEst.style.display !== 'none'
+
+        if (estaEditando) {
+            formEst.style.display = 'none'
+        } else {
+            formEst.style.display = 'block'
+            document.getElementById('inputEstimativa').focus()
+        }
+    })
+
+    const btnConfirmar = document.getElementById('btnconfirmarEstimativa')
+    if (!btnConfirmar) return
+
+    btnConfirmar.addEventListener('click', function() {
+        const categoria = document.querySelector('.btn-editar-est').dataset.categoria
+        const valor = parseInt(document.getElementById('inputEstimativa').value) || 0
+
+        // Salva no objeto de dados
+        dadosMeses[mesAtual][categoria].estimativa = valor
+
+        // Atualiza o texto na tela sem re-renderizar tudo
+        document.getElementById('textoEstimativa').textContent = formatarMoeda(valor)
+        document.getElementById('formEstimativa').style.display = 'none'
+
+        // Salva no backend
+        salvarDados()
+    })
 }
 
 // Função principal de renderização
