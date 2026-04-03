@@ -40,10 +40,7 @@ function criarMesVazio() {
 }
 
 // Dados - Gerar novos meses
-let dadosMeses = {
-    "2026-02": criarMesVazio(),
-    "2026-03": criarMesVazio()
-}
+let dadosMeses = {}
 
 // Variáveis de controle
 let mesAtual = ""
@@ -647,7 +644,7 @@ const linhas = itens.length === 0
                     <th></th>
                 <tr>
             </thead>
-            <tbody>
+            <tbody id="listaContas">
                 ${linhas}
             </tbody>
             <tfoot>
@@ -691,55 +688,48 @@ function adicionarEventoContas() {
     renderizar()
     })
     
-    // Evento nos input de realidade
-    document.querySelectorAll('.input-realidade').forEach(input => {
-        input.addEventListener('change', function() {
-            const id = parseInt(this.dataset.id)
-            const valor = parseInt(this.value) || 0
+    // Delegação para realidade, pago e remover
+    document.querySelector('listaContas').addEventListener('click', function(e) {
 
-            // Atualiza o valor nos dados
-            const item = dadosMeses[mesAtual].contasFixas.itens.find(i => i.id === id)
-            item.realidade = valor
-
-            // Recalcula o total
-            const total = dadosMeses[mesAtual].contasFixas.itens
-                .reduce((soma, i) => soma + i.realidade, 0)
-            document.getElementById('totalRealidadeContas').textContent = formatarMoeda(total)
-            dadosMeses[mesAtual].contasFixas.realidade = total
-        })
-    })
-    
-    // Evento nos botões de pago
-    document.querySelectorAll('.btn-pago').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const id = parseInt(this.dataset.id)
-            const item = dadosMeses[mesAtual].contasFixas.itens.find(i => i.id === id)
-
-            // Alterna entre pago e não pago
-            item.pago = !item.pago
-
-            // Atualiza o botão visualmente
-            this.textContent = item.pago ? '✓' : '○'
-            this.classList.toggle('ativo')
-
-            // Atualiza a cor da linha
-            this.closest('tr').classList.toggle('conta-paga')
-        })
-    })
-
-    // Botão remover
-    document.querySelectorAll('.btn-remover').forEach(btn => {
-        btn.addEventListener('click', function () {
-            const id = parseInt(this.dataset.id)
-            dadosMeses[mesAtual].contasFixas.itens = 
+        // Botão remover
+        const btnRemover = e.target.closest('.btn-remover')
+        if (btnRemover) {
+            const id = parseInt(btnRemover.dataset.id)
+            dadosMeses[mesAtual].contasFixas.itens =
                 dadosMeses[mesAtual].contasFixas.itens.filter(i => i.id !== id)
-            
-            dadosMeses[mesAtual].contasFixas.estimativa =
+            dadosMeses[mesAtual].contasFixas.Estimativa =
                 dadosMeses[mesAtual].contasFixas.itens
                     .reduce((soma, i) => soma + i.estimativa, 0)
-
             renderizar()
-        })
+            return
+        }
+    
+    // Botão pago
+    const btnPago = e.target.closest('.btn-pago')
+    if (btnPago) {
+        const id = parseInt(btnPago.dataset.id)
+        const item = dadosMeses[mesAtual].contaFixas.itens.find(i => i.id === id)
+        item.pago = !item.pago
+        btnPago = !item.pago
+        btnPago.textContent = item.pago ? '✓' : '○'
+        btnPago.classList.toggle('ativo')
+        btnPago.closest('tr').classList.toggle('conta-paga')
+        salvarDados()
+    }
+    })
+
+    // Realidade - mantém 'change' mas sem loop
+    document.querySelector('listaContas').addEventListener('change', function(e) {
+        const input = e.target.closest('.input-realidade')
+        if (!input) return
+        const id = parseInt(input.dataset.id)
+        const valor = parseInt(input.value) || 0
+        const item = dadosMeses[mesAtual].contasFixas.itens.find(i => i.id === id)
+        item.realidade = valor
+        const total = dadosMeses[mesAtual].contasFixas.itens
+            .reduce((soma, i) => soma + i.realidade, 0)
+        document.getElementById('totalRealidadeContas').textContent = formatarMoeda(total)
+        dadosMeses[mesAtual].contasFixas.realidade = total
     })
 }
 
@@ -830,19 +820,16 @@ function adicionarEventosMercado() {
         renderizar()
     })
 
-    // Botões de remover
-    document.querySelectorAll('.btn-remover').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const id = parseInt(this.dataset.id)
-
-            // Remove o item do array
-            dadosMeses[mesAtual].mercado.itens = dadosMeses[mesAtual].mercado.itens
-                .filter(item => item.id !== id)
-            
-            // Atualiza a tela
-            renderizar()
-        })
+    // Delegação de eventos - um único listener no tbody
+    document.getElementById('listaMercado').addEventListener('click', function(e) {
+        const btn = e.target.closest('.btn-remover')
+        if (!btn) return
+        const id = parseInt(btn.dataset.id)
+        dadosMeses[mesAtual].mercado.itens =
+            dadosMeses[mesAtual].mercado.itens.filter(item => item.id !== id)
+        renderizar()
     })
+ 
 
     adicionarEventosEstimativa()
 }
@@ -927,15 +914,16 @@ function adicionarEventosRefeicoes() {
         renderizar()
     })
 
-    document.querySelectorAll('.btn-remover').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const id = parseInt(this.dataset.id)
-            dadosMeses[mesAtual].refeicoes.itens = dadosMeses[mesAtual].refeicoes.itens
-                .filter(item => item.id !== id)
-            renderizar()
+    // Delegação de eventos    
+    document.getElementById('listaRefeicoes').addEventListener('click', function(e) {
+        const btn = e.target.closest('.btn-remover')
+        if (!btn) return
+        const id = parseInt(btn.dataset.id)
+        dadosMeses[mesAtual].refeicoes.itens = 
+            dadosMeses[mesAtual].refeicoes.itens.filter(item => item.id !== id)
+        renderizar()
         })
-    })
-
+   
     adicionarEventosEstimativa()
 }
 
@@ -1002,7 +990,7 @@ function renderizarOutros(dados) {
                     <thead>
                         <tr><th>Descrição</th><th>Data</th><th>Valor</th></tr>
                     </thead>
-                    <tbody>${linhasExtras}</tbody>
+                    <tbody id="listaExtras">${linhasExtras}</tbody>
                     <tfoot>
                         <tr class="linha-saldo">
                             <td colspan="2"><strong>Total receitas:</strong></td>
@@ -1036,7 +1024,7 @@ function renderizarOutros(dados) {
                     <th>Valor</th>
                 </tr>
             </thead>
-            <tbody>${linhasGastos}</tbody>
+            <tbody id="listaGastos">${linhasGastos}</tbody>
             <tfoot>
                 <tr class="linha-saldo">
                     <td colspan="2"><strong>Total gastos:</strong></td>
@@ -1098,21 +1086,24 @@ function adicionarEventosOutros() {
         renderizar()
     })
 
-    // Botões remover
-        document.querySelectorAll('.btn-remover').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const id = parseInt(this.dataset.id)
-            const tipo = this.dataset.tipo
-
-            if (tipo === 'extra') {
-                dadosMeses[mesAtual].outrosGastos.receitasExtras =
-                    dadosMeses[mesAtual].outrosGastos.receitasExtras.filter(i => i.id !== id)
-            } else {
-                dadosMeses[mesAtual].outrosGastos.itens =
-                    dadosMeses[mesAtual].outrosGastos.itens.filter(i => i.id !== id)
-            }            
-            renderizar()
-        })
+    // Delegação de eventos - cobre gastos e extras numa só função
+    document.querySelector('#listaExtras').addEventListener('click', function(e){
+        const btn = e.target.closest('.btn-remover')
+        if (!btn) return
+        const id = parseInt(btn.dataset.id)
+        dadosMeses[mesAtual].outrosGastos.receitasExtas =
+            dadosMeses[mesAtual].outrosGastos.receitasExtras.filter(i => i.id !== id)
+        renderizar()
+    })
+    
+    
+    document.querySelectorAll('#listaGastos').addEventListener('click', function(e) {
+        const btn = e.target.closet('.btn-remover')
+        if (!btn) return
+        const id = parseInt(btn.dataset.id)
+        dadosMeses[mesAtual].outrosGastos.itens =
+            dadosMeses[mesAtual].outrosGastos.itens.filter(i => i.id !== id)
+        renderizar()
     })
 
     adicionarEventosEstimativa()
@@ -1222,7 +1213,7 @@ function renderizarCartao(dados) {
                     <th>Valor</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="listaCartao">
                 ${abaCartao === 'avista' ? linhasAvista : linhasParcelado}
             </tbody>
         </table>
@@ -1238,6 +1229,19 @@ function adicionarEventosCartao() {
             renderizar()
         })
     })
+
+    // Delegação de eventos - cobre os dois tbody (avista e parcelado)
+    const listaCartao = document.getElementById('listaCartao')
+    if(listaCartao) {
+        listaCartao.addEventListener('click', function(e) {
+            const btn = e.target.closest('btn-remover')
+            if (!btn) return
+            const id = parseFloat(btn.dataset.id)
+            dadosMeses[mesAtual].cartaoCredito.itens =
+                dadosMeses[mesAtual].cartaoCredito.itens.filter(item => item.id !== id)
+            renderizar()   
+        })
+    }
 
     // Botão adicionar
     const btnAdicionar = document.getElementById('btnAdicionar')
@@ -1301,15 +1305,6 @@ function adicionarEventosCartao() {
     renderizar()
     })
 
-    // Botões de remover
-    document.querySelectorAll('.btn-remover').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const id = parseInt(this.dataset.id)
-            dadosMeses[mesAtual].cartaoCredito.itens = dadosMeses[mesAtual].cartaoCredito.itens
-                .filter(item => item.id!== id)
-            renderizar()
-        })
-    })
 
     adicionarEventosEstimativa()
 }
