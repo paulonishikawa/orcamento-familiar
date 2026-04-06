@@ -150,6 +150,76 @@ const mesSelect = document.getElementById('mesSelect')
 const opcaoSelect = document.getElementById('opcaoSelect')
 const conteudoPrincipal = document.getElementById('conteudoPrincipal')
 
+// Evento único para todos os botões remover
+conteudoPrincipal.addEventListener('click', function(e) {
+    const btn = e.target.closest('.btn-remover')
+    const btnPago = e.target.closest('.btn-pago')
+    
+    if (btn) {
+        const id = parseFloat(btn.dataset.id)
+        const tipo = btn.dataset.tipo
+        
+        if (opcaoAtual === 'mercado') {
+            dadosMeses[mesAtual].mercado.itens =
+            dadosMeses[mesAtual].mercado.itens.filter(i => i.id !== id)
+            dadosMeses[mesAtual].mercado.realidade =
+            dadosMeses[mesAtual].mercado.itens
+            .reduce((soma, i) => soma + i.valor,0)
+            
+        } else if (opcaoAtual === 'refeicoes') {
+            dadosMeses[mesAtual].refeicoes.itens =
+            dadosMeses[mesAtual].refeicoes.itens.filter(i => i.id !== id)
+            dadosMeses[mesAtual].refeicoes.realidade =
+            dadosMeses[mesAtual].refeicoes.itens
+            .reduce((soma, i) => soma + i.valor,0)
+            
+        } else if (opcaoAtual === 'cartao') {
+            dadosMeses[mesAtual].cartaoCredito.itens =
+            dadosMeses[mesAtual].cartaoCredito.itens.filter(i => i.id !== id)
+            dadosMeses[mesAtual].cartaoCredito.realidade =
+            dadosMeses[mesAtual].cartaoCredito.itens
+            .reduce((soma, i) => soma + i.valorParcela,0)
+            
+        } else if (opcaoAtual === 'outros') {
+            if (tipo === 'extra') {
+                dadosMeses[mesAtual].outrosGastos.receitasExtras =
+                dadosMeses[mesAtual].outrosGastos.receitasExtras.filter(i => i.id !== id)
+            } else {
+                dadosMeses[mesAtual].outrosGastos.itens =
+                dadosMeses[mesAtual].outrosGastos.itens.filter(i => i.id !== id)
+                dadosMeses[mesAtual].outrosGastos.realidade =
+                dadosMeses[mesAtual].outrosGastos.itens
+                .reduce((soma, i) => soma + i.valor,0)
+            }
+            
+        }else if (opcaoAtual === 'contas') {
+            dadosMeses[mesAtual].contasFixas.itens =
+            dadosMeses[mesAtual].contasFixas.itens.filter(i => i.id !== id)
+            
+            dadosMeses[mesAtual].contasFixas.estimativa =
+            dadosMeses[mesAtual].contasFixas.itens
+            .reduce((soma, i) => soma + i.estimativa, 0)
+            
+            dadosMeses[mesAtual].contasFixas.realidade =
+            dadosMeses[mesAtual].contasFixas.itens
+            .reduce((soma, i) => soma + i.realidade, 0)         
+        }
+
+        renderizar()
+    }
+       
+    if (btnPago) {
+        const idPago = parseFloat(btnPago.dataset.id)
+        const item = dadosMeses[mesAtual].contasFixas.itens.find(i => i.id === idPago)        
+        if (item) {
+            item.pago = !item.pago 
+            renderizar()
+    }       
+                
+    }
+})
+
+
 // Event Listeners (escutadores de eventos)
 mesSelect.addEventListener('change', function() {
     mesAtual = mesSelect.value
@@ -197,9 +267,13 @@ function htmlEstimativa(categoria, valorEstimativa) {
 }
 
 // Função para calcular totais do resumo
-function calcularResumo(dados) {    
-    const receitasEst = dados.salarios.estimativa
-    const receitasReal = dados.salarios.realidade
+function calcularResumo(dados) {
+    const s = dados.salarios;
+    
+
+    const receitasEst = s.modoEstimativa === 'calculo' ?
+     calcularSalario(s).liquido : s.estimativa;
+    const receitasReal = s.realidade;
     
     const totalExtrasReal = (dados.outrosGastos.receitasExtras || [])
         .reduce((soma, item) => soma + item.valor, 0)
@@ -221,7 +295,7 @@ function calcularResumo(dados) {
 
         // Saldos (receitas - despesas)
         const saldoEst = receitasEst - despesasEst
-        const saldoReal = receitasReal - despesasReal
+        const saldoReal = (receitasReal + totalExtrasReal) - despesasReal
 
         // Retornar objetos com os totais
         return {
@@ -294,7 +368,12 @@ function calcularSalario(s) {
 function renderizarSalario(dados) {
     const s = dados.salarios
     const c = calcularSalario(s)
-    const modo = s.modoEstimativa || 'calculo' 
+    const modo = s.modoEstimativa || 'calculo'
+
+    // Atualiza estimativa automaticamente no modo calculo
+    if (modo === 'calculo') {
+        dadosMeses[mesAtual].salarios.estimativa = Math.round(c.liquido)
+    }
 
     return `
         <h2 class="secao-titulo">Salário</h2>
@@ -688,38 +767,8 @@ function adicionarEventoContas() {
     renderizar()
     })
     
-    // Delegação para realidade, pago e remover
-    document.querySelector('listaContas').addEventListener('click', function(e) {
-
-        // Botão remover
-        const btnRemover = e.target.closest('.btn-remover')
-        if (btnRemover) {
-            const id = parseInt(btnRemover.dataset.id)
-            dadosMeses[mesAtual].contasFixas.itens =
-                dadosMeses[mesAtual].contasFixas.itens.filter(i => i.id !== id)
-            dadosMeses[mesAtual].contasFixas.Estimativa =
-                dadosMeses[mesAtual].contasFixas.itens
-                    .reduce((soma, i) => soma + i.estimativa, 0)
-            renderizar()
-            return
-        }
-    
-    // Botão pago
-    const btnPago = e.target.closest('.btn-pago')
-    if (btnPago) {
-        const id = parseInt(btnPago.dataset.id)
-        const item = dadosMeses[mesAtual].contaFixas.itens.find(i => i.id === id)
-        item.pago = !item.pago
-        btnPago = !item.pago
-        btnPago.textContent = item.pago ? '✓' : '○'
-        btnPago.classList.toggle('ativo')
-        btnPago.closest('tr').classList.toggle('conta-paga')
-        salvarDados()
-    }
-    })
-
-    // Realidade - mantém 'change' mas sem loop
-    document.querySelector('listaContas').addEventListener('change', function(e) {
+     // Realidade - mantém 'change' mas sem loop
+    document.getElementById('listaContas').addEventListener('change', function(e) {
         const input = e.target.closest('.input-realidade')
         if (!input) return
         const id = parseInt(input.dataset.id)
@@ -815,22 +864,15 @@ function adicionarEventosMercado() {
 
         // Adiciona nos dados
         dadosMeses[mesAtual].mercado.itens.push(novoItem)
+        dadosMeses[mesAtual].mercado.realidade =
+            dadosMeses[mesAtual].mercado.itens
+                .reduce((soma, i) => soma + i.valor, 0)
 
         // Atualiza a tela
         renderizar()
     })
 
-    // Delegação de eventos - um único listener no tbody
-    document.getElementById('listaMercado').addEventListener('click', function(e) {
-        const btn = e.target.closest('.btn-remover')
-        if (!btn) return
-        const id = parseInt(btn.dataset.id)
-        dadosMeses[mesAtual].mercado.itens =
-            dadosMeses[mesAtual].mercado.itens.filter(item => item.id !== id)
-        renderizar()
-    })
- 
-
+    
     adicionarEventosEstimativa()
 }
 
@@ -911,19 +953,13 @@ function adicionarEventosRefeicoes() {
         }
 
         dadosMeses[mesAtual].refeicoes.itens.push(novoItem)
+        dadosMeses[mesAtual].refeicoes.realidade =
+            dadosMeses[mesAtual].refeicoes.itens
+                .reduce((soma, i) => soma + i.valor, 0)
         renderizar()
     })
 
-    // Delegação de eventos    
-    document.getElementById('listaRefeicoes').addEventListener('click', function(e) {
-        const btn = e.target.closest('.btn-remover')
-        if (!btn) return
-        const id = parseInt(btn.dataset.id)
-        dadosMeses[mesAtual].refeicoes.itens = 
-            dadosMeses[mesAtual].refeicoes.itens.filter(item => item.id !== id)
-        renderizar()
-        })
-   
+       
     adicionarEventosEstimativa()
 }
 
@@ -1059,6 +1095,9 @@ function adicionarEventosOutros() {
             data: dia + '/' + mes
         })
 
+        dadosMeses[mesAtual].outrosGastos.realidade =
+        dadosMeses[mesAtual].outrosGastos.itens.reduce((soma, i) => soma + i.valor, 0)
+
         renderizar()
     })
 
@@ -1086,26 +1125,7 @@ function adicionarEventosOutros() {
         renderizar()
     })
 
-    // Delegação de eventos - cobre gastos e extras numa só função
-    document.querySelector('#listaExtras').addEventListener('click', function(e){
-        const btn = e.target.closest('.btn-remover')
-        if (!btn) return
-        const id = parseInt(btn.dataset.id)
-        dadosMeses[mesAtual].outrosGastos.receitasExtas =
-            dadosMeses[mesAtual].outrosGastos.receitasExtras.filter(i => i.id !== id)
-        renderizar()
-    })
     
-    
-    document.querySelectorAll('#listaGastos').addEventListener('click', function(e) {
-        const btn = e.target.closet('.btn-remover')
-        if (!btn) return
-        const id = parseInt(btn.dataset.id)
-        dadosMeses[mesAtual].outrosGastos.itens =
-            dadosMeses[mesAtual].outrosGastos.itens.filter(i => i.id !== id)
-        renderizar()
-    })
-
     adicionarEventosEstimativa()
 }
 
@@ -1230,24 +1250,13 @@ function adicionarEventosCartao() {
         })
     })
 
-    // Delegação de eventos - cobre os dois tbody (avista e parcelado)
-    const listaCartao = document.getElementById('listaCartao')
-    if(listaCartao) {
-        listaCartao.addEventListener('click', function(e) {
-            const btn = e.target.closest('btn-remover')
-            if (!btn) return
-            const id = parseFloat(btn.dataset.id)
-            dadosMeses[mesAtual].cartaoCredito.itens =
-                dadosMeses[mesAtual].cartaoCredito.itens.filter(item => item.id !== id)
-            renderizar()   
-        })
-    }
-
+    
     // Botão adicionar
     const btnAdicionar = document.getElementById('btnAdicionar')
-    if (!btnAdicionar) return
+    
+    if (btnAdicionar) {
 
-    btnAdicionar.addEventListener('click', function() {
+    btnAdicionar.onclick = function() {
         const descricao = document.getElementById('inputDescricao').value.trim()
         const valor     = parseInt(document.getElementById('inputValor').value) || 0
 
@@ -1259,9 +1268,10 @@ function adicionarEventosCartao() {
     // Pega a data de hoje
     const hoje = new Date()
     const data = String(hoje.getDate()).padStart(2, '0') + '/' +
-                 String(hoje.getMonth() + 1).padStart(2, 0)
+                 String(hoje.getMonth() + 1).padStart(2, '0')
 
-    if (abaCartao === 'avista') {
+    const abaAtiva = document.querySelector('.aba-btn.ativa')?.dataset.aba
+    if (abaAtiva === 'avista') {
         // Compra à vista - 1 parcela
         const novoItem = {
             id: Date.now(),
@@ -1301,9 +1311,33 @@ function adicionarEventosCartao() {
         }
         dadosMeses[mesAtual].cartaoCredito.itens.push(novoItem)
     }
+        dadosMeses[mesAtual].cartaoCredito.realidade =
+        dadosMeses[mesAtual].cartaoCredito.itens.reduce((soma, i) => soma + i.valorParcela, 0)
+        
+        renderizar()
+    }
 
-    renderizar()
-    })
+    }
+
+    const listaCartao = document.getElementById('listaCartao')
+
+    if (listaCartao) {
+        listaCartao.addEventListener('click', function(e) {
+            const btn = e.target.closest('.btn-remover')
+
+            if (!btn) return
+
+            const id = parseFloat(btn.dataset.id)
+
+            dadosMeses[mesAtual].cartaoCredito.itens =
+                dadosMeses[mesAtual].cartaoCredito.itens.filter(item => item.id !== id)
+            
+            dadosMeses[mesAtual].cartaoCredito.realidade =
+                dadosMeses[mesAtual].cartaoCredito.itens.reduce((soma, i) => soma + i.valorParcela, 0)
+            
+            renderizar()
+        })
+    }
 
 
     adicionarEventosEstimativa()
@@ -1336,6 +1370,11 @@ function copiarContasDoMesAnterior(mesAtual) {
             .reduce((soma, i) => soma + i.estimativa, 0)
 
     // CARTÃO PARCELADO
+    const jaTemParcelados = dadosMeses[mesAtual].cartaoCredito.itens
+    .some(item => item.totalParcelas > 1)
+
+    if (!jaTemParcelados) {
+
     const parceladosAnteriores = dadosMeses[mesAnterior].cartaoCredito.itens
         .filter(item => item.totalParcelas > 1 && item.parcelaAtual < item.totalParcelas)
 
@@ -1346,7 +1385,7 @@ function copiarContasDoMesAnterior(mesAtual) {
     }))
 
     dadosMeses[mesAtual].cartaoCredito.itens.push(...parceladosCopias)
-}
+}}
 
 const API = 'https://api-orcamento-q4iy.onrender.com'
 
