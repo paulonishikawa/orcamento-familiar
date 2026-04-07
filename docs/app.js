@@ -153,15 +153,15 @@ const conteudoPrincipal = document.getElementById('conteudoPrincipal')
 // Evento único para todos os botões remover
 conteudoPrincipal.addEventListener('click', function(e) {
     const btn = e.target.closest('.btn-remover')
-    const btnPago = e.target.closest('.btn-pago')
-    
+        
     if (btn) {
-        const id = parseFloat(btn.dataset.id)
+        const id = Number(btn.dataset.id)
         const tipo = btn.dataset.tipo
         
         if (opcaoAtual === 'mercado') {
             dadosMeses[mesAtual].mercado.itens =
             dadosMeses[mesAtual].mercado.itens.filter(i => i.id !== id)
+
             dadosMeses[mesAtual].mercado.realidade =
             dadosMeses[mesAtual].mercado.itens
             .reduce((soma, i) => soma + i.valor,0)
@@ -173,7 +173,7 @@ conteudoPrincipal.addEventListener('click', function(e) {
             dadosMeses[mesAtual].refeicoes.itens
             .reduce((soma, i) => soma + i.valor,0)
             
-        } else if (opcaoAtual === 'cartao') {
+        } else if (opcaoAtual === 'cartaoCredito') {
             dadosMeses[mesAtual].cartaoCredito.itens =
             dadosMeses[mesAtual].cartaoCredito.itens.filter(i => i.id !== id)
             dadosMeses[mesAtual].cartaoCredito.realidade =
@@ -206,10 +206,13 @@ conteudoPrincipal.addEventListener('click', function(e) {
         }
 
         renderizar()
+        return
     }
+
+    const btnPago = e.target.closest('.btn-pago')
        
-    if (btnPago) {
-        const idPago = parseFloat(btnPago.dataset.id)
+    if (btnPago && opcaoAtual === 'contas') {
+        const idPago = Number(btnPago.dataset.id)
         const item = dadosMeses[mesAtual].contasFixas.itens.find(i => i.id === idPago)        
         if (item) {
             item.pago = !item.pago 
@@ -559,7 +562,7 @@ function adicionarEventosSalario() {
         if (!input) return
 
         input.addEventListener('input', function () {
-            dadosMeses[mesAtual].salarios[campo] = parseFloat(this.value) || 0
+            dadosMeses[mesAtual].salarios[campo] = Number(this.value) || 0
 
         const s = dadosMeses[mesAtual].salarios
         const c = calcularSalario(s)
@@ -742,7 +745,11 @@ const linhas = itens.length === 0
 function adicionarEventoContas() {
     
     // Botão adicionar
-    document.getElementById('btnAdicionar').addEventListener('click', function () {
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('#btnAdicionar')
+        if (!btn || opcaoAtual !== 'contas') return
+        
+        
         const descricao = document.getElementById('inputDescricao').value.trim()
         const valor = parseInt(document.getElementById('inputValor').value) || 0
 
@@ -776,7 +783,7 @@ function adicionarEventoContas() {
         const item = dadosMeses[mesAtual].contasFixas.itens.find(i => i.id === id)
         item.realidade = valor
         const total = dadosMeses[mesAtual].contasFixas.itens
-            .reduce((soma, i) => soma + i.realidade, 0)
+            .reduce((soma, i) => soma + (i.realidade || 0), 0)
         document.getElementById('totalRealidadeContas').textContent = formatarMoeda(total)
         dadosMeses[mesAtual].contasFixas.realidade = total
     })
@@ -838,7 +845,11 @@ function renderizarMercado(dados) {
 function adicionarEventosMercado() {
     
     // Botão de adicionar item
-    document.getElementById('btnAdicionar').addEventListener('click', function() {
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('#btnAdicionar')
+        if (!btn || opcaoAtual !== 'mercado') return
+
+
         const descricao = document.getElementById('inputDescricao').value.trim()
         const valor = parseInt(document.getElementById('inputValor').value) || 0
 
@@ -855,26 +866,26 @@ function adicionarEventosMercado() {
         const dataFormatada = dia + '/' + mes
 
         // Cria o novo item
-        const novoItem = {
+        dadosMeses[mesAtual].mercado.itens.push({
             id: Date.now(),
             descricao: descricao,
             valor: valor,
             data: dataFormatada
-        }
-
+        })
+        
         // Adiciona nos dados
         dadosMeses[mesAtual].mercado.itens.push(novoItem)
         dadosMeses[mesAtual].mercado.realidade =
             dadosMeses[mesAtual].mercado.itens
                 .reduce((soma, i) => soma + i.valor, 0)
 
-        // Atualiza a tela
-        renderizar()
-    })
+                renderizar()
+        })
 
-    
-    adicionarEventosEstimativa()
-}
+
+            
+        adicionarEventosEstimativa()
+    }
 
 // Gera HTML da tela de Refeições
 function renderizarRefeicoes(dados) {
@@ -931,7 +942,10 @@ return `
 
 function adicionarEventosRefeicoes() {
     
-    document.getElementById('btnAdicionar').addEventListener('click', function() {
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('#btnAdicionar')
+        if (!btn || opcaoAtual !== 'refeicoes') return
+
         const descricao = document.getElementById('inputDescricao').value.trim()
         const valor = parseInt(document.getElementById('inputValor').value) || 0
 
@@ -945,14 +959,13 @@ function adicionarEventosRefeicoes() {
         const mes = String(hoje.getMonth() + 1).padStart(2, '0')
         const dataFormatada = dia + '/' + mes
 
-        const novoItem = {
+        dadosMeses[mesAtual].refeicoes.itens.push({
             id: Date.now(),
-            descricao: descricao,
-            valor: valor,
+            descricao,
+            valor,
             data: dataFormatada
-        }
+        })
 
-        dadosMeses[mesAtual].refeicoes.itens.push(novoItem)
         dadosMeses[mesAtual].refeicoes.realidade =
             dadosMeses[mesAtual].refeicoes.itens
                 .reduce((soma, i) => soma + i.valor, 0)
@@ -1075,7 +1088,10 @@ function renderizarOutros(dados) {
 function adicionarEventosOutros() {
 
     // Botão adicionar GASTO
-    document.getElementById('btnAdicionar').addEventListener('click', function () {
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('#btnAdicionar')
+        if (!btn || opcaoAtual !== 'outros') return
+
         const descricao = document.getElementById('inputDescricao').value.trim()
         const valor = parseInt(document.getElementById('inputValor').value) || 0
 
@@ -1102,7 +1118,11 @@ function adicionarEventosOutros() {
     })
 
     // Botão adicionar RECEITA EXTRA
-    document.getElementById('btnAdicionarExtra').addEventListener('click', function () {
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('#btnAdicionarExtra')
+        if (!btn || opcaoAtual !== 'outros') return
+
+
         const descricao = document.getElementById('inputDescricaoExtra').value.trim()
         const valor = parseInt(document.getElementById('inputValorExtra').value) || 0
 
@@ -1242,21 +1262,23 @@ function renderizarCartao(dados) {
 
 function adicionarEventosCartao() {
 
-    //Troca de abas
-    document.querySelectorAll('.aba-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            abaCartao = this.dataset.aba
+    if (window.eventoCartaoRegistrado) return
+    window.eventoCartaoRegistrado = true
+
+    conteudoPrincipal.addEventListener('click', function(e) {
+        
+        // Troca de aba
+        const abaBtn = e.target.closest('.aba-btn')
+        if (abaBtn && opcaoAtual === 'cartao') {
+            abaCartao = abaBtn.dataset.aba
             renderizar()
-        })
-    })
-
+            return
+        }
     
-    // Botão adicionar
-    const btnAdicionar = document.getElementById('btnAdicionar')
-    
-    if (btnAdicionar) {
+        // Botão adicionar
+        const btnAdd = e.target.closest('#btnAdicionar')
+        if (btnAdd && opcaoAtual === 'cartao') {
 
-    btnAdicionar.onclick = function() {
         const descricao = document.getElementById('inputDescricao').value.trim()
         const valor     = parseInt(document.getElementById('inputValor').value) || 0
 
@@ -1270,19 +1292,17 @@ function adicionarEventosCartao() {
     const data = String(hoje.getDate()).padStart(2, '0') + '/' +
                  String(hoje.getMonth() + 1).padStart(2, '0')
 
-    const abaAtiva = document.querySelector('.aba-btn.ativa')?.dataset.aba
-    if (abaAtiva === 'avista') {
+    if (abaCartao === 'avista') {
         // Compra à vista - 1 parcela
-        const novoItem = {
+        dadosMeses[mesAtual].cartaoCredito.itens.push({
             id: Date.now(),
-            descricao: descricao,
+            descricao,
             valorTotal: valor,
             valorParcela: valor,
             parcelaAtual: 1,
             totalParcelas: 1,
             dataCompra: data
-        }
-        dadosMeses[mesAtual].cartaoCredito.itens.push(novoItem)
+        })
 
     } else {
         // Compra parcelada 
@@ -1300,45 +1320,22 @@ function adicionarEventosCartao() {
             return
         }
 
-        const novoItem = {
+        dadosMeses[mesAtual].cartaoCredito.itens.push({
             id: Date.now(),
-            descricao: descricao,
+            descricao,
             valorTotal: valor * totalParcelas,
             valorParcela: valor,
-            parcelaAtual: parcelaAtual,
-            totalParcelas: totalParcelas,
+            parcelaAtual,
+            totalParcelas,
             dataCompra: data
-        }
-        dadosMeses[mesAtual].cartaoCredito.itens.push(novoItem)
-    }
-        dadosMeses[mesAtual].cartaoCredito.realidade =
-        dadosMeses[mesAtual].cartaoCredito.itens.reduce((soma, i) => soma + i.valorParcela, 0)
-        
-        renderizar()
-    }
-
-    }
-
-    const listaCartao = document.getElementById('listaCartao')
-
-    if (listaCartao) {
-        listaCartao.addEventListener('click', function(e) {
-            const btn = e.target.closest('.btn-remover')
-
-            if (!btn) return
-
-            const id = parseFloat(btn.dataset.id)
-
-            dadosMeses[mesAtual].cartaoCredito.itens =
-                dadosMeses[mesAtual].cartaoCredito.itens.filter(item => item.id !== id)
-            
-            dadosMeses[mesAtual].cartaoCredito.realidade =
-                dadosMeses[mesAtual].cartaoCredito.itens.reduce((soma, i) => soma + i.valorParcela, 0)
-            
-            renderizar()
         })
     }
-
+                
+        renderizar()
+        return
+    }
+    })
+      
 
     adicionarEventosEstimativa()
 }
@@ -1584,7 +1581,7 @@ function renderizar() {
     } else if (opcaoAtual === 'outros'){
         conteudoPrincipal.innerHTML = renderizarOutros(dados)
         setTimeout(() => adicionarEventosOutros(), 0)
-    } else if (opcaoAtual === 'cartao') { 
+    } else if (opcaoAtual === 'cartaoCredito') { 
         conteudoPrincipal.innerHTML = renderizarCartao(dados)
         setTimeout(() => adicionarEventosCartao(), 0)
     } else {
