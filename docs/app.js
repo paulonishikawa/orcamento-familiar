@@ -173,7 +173,7 @@ conteudoPrincipal.addEventListener('click', function(e) {
             dadosMeses[mesAtual].refeicoes.itens
             .reduce((soma, i) => soma + i.valor,0)
             
-        } else if (opcaoAtual === 'cartaoCredito') {
+        } else if (opcaoAtual === 'cartao') {
             dadosMeses[mesAtual].cartaoCredito.itens =
             dadosMeses[mesAtual].cartaoCredito.itens.filter(i => i.id !== id)
             dadosMeses[mesAtual].cartaoCredito.realidade =
@@ -874,7 +874,6 @@ function adicionarEventosMercado() {
         })
         
         // Adiciona nos dados
-        dadosMeses[mesAtual].mercado.itens.push(novoItem)
         dadosMeses[mesAtual].mercado.realidade =
             dadosMeses[mesAtual].mercado.itens
                 .reduce((soma, i) => soma + i.valor, 0)
@@ -1262,80 +1261,78 @@ function renderizarCartao(dados) {
 
 function adicionarEventosCartao() {
 
-    if (window.eventoCartaoRegistrado) return
-    window.eventoCartaoRegistrado = true
-
-    conteudoPrincipal.addEventListener('click', function(e) {
-        
         // Troca de aba
-        const abaBtn = e.target.closest('.aba-btn')
-        if (abaBtn && opcaoAtual === 'cartao') {
-            abaCartao = abaBtn.dataset.aba
-            renderizar()
-            return
-        }
-    
+        document.querySelectorAll('.aba-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                if (opcaoAtual !== 'cartao') return
+                abaCartao = this.dataset.aba
+                renderizar
+            })
+        })
+        
+          
         // Botão adicionar
-        const btnAdd = e.target.closest('#btnAdicionar')
-        if (btnAdd && opcaoAtual === 'cartao') {
+        const btnAdicionar = e.target.getElementById('btnAdicionar')
+        if (btnAdicionar) return
 
-        const descricao = document.getElementById('inputDescricao').value.trim()
-        const valor     = parseInt(document.getElementById('inputValor').value) || 0
+        btnAdicionar.addEventListener('click', function(){
+            const descricao = document.getElementById('inputDescricao').value.trim()
+            const valor     = parseInt(document.getElementById('inputValor').value) || 0
 
-        if (!descricao || valor <= 0) {
-            alert('Preencha a descrição e um valor válido')
-            return
-        }
-
-    // Pega a data de hoje
-    const hoje = new Date()
-    const data = String(hoje.getDate()).padStart(2, '0') + '/' +
-                 String(hoje.getMonth() + 1).padStart(2, '0')
-
-    if (abaCartao === 'avista') {
-        // Compra à vista - 1 parcela
-        dadosMeses[mesAtual].cartaoCredito.itens.push({
-            id: Date.now(),
-            descricao,
-            valorTotal: valor,
-            valorParcela: valor,
-            parcelaAtual: 1,
-            totalParcelas: 1,
-            dataCompra: data
-        })
-
-    } else {
-        // Compra parcelada 
-        const parcelaAtual  = parseInt(document.getElementById('inputParcelaAtual').value) || 0
-        const totalParcelas = parseInt(document.getElementById('inputTotalParcelas').value) || 0
-
-
-        if (parcelaAtual < 1 || totalParcelas < 2) {
-            alert('Informe a parcela atual e o total de parcelas!')
-            return
-        }
-
-        if (parcelaAtual > totalParcelas) {
-            alert('A parcela atual não pode ser maior que o total!')
-            return
-        }
-
-        dadosMeses[mesAtual].cartaoCredito.itens.push({
-            id: Date.now(),
-            descricao,
-            valorTotal: valor * totalParcelas,
-            valorParcela: valor,
-            parcelaAtual,
-            totalParcelas,
-            dataCompra: data
-        })
-    }
+            if (!descricao || valor <= 0) {
+                alert('Preencha a descrição e um valor válido')
+                return
+            }
+            // Pega a data de hoje
+            const hoje = new Date()
+            const data = String(hoje.getDate()).padStart(2, '0') + '/' +
+                         String(hoje.getMonth() + 1).padStart(2, '0')
+                         
+            if (abaCartao === 'avista') {
+                // Compra à vista - 1 parcela
+                dadosMeses[mesAtual].cartaoCredito.itens.push({
+                    id: Date.now(),
+                    descricao,
+                    valorTotal: valor,
+                    valorParcela: valor,
+                    parcelaAtual: 1,
+                    totalParcelas: 1,
+                    dataCompra: data
+                })
                 
+            } else {
+                // Compra parcelada 
+                const parcelaAtual  = parseInt(document.getElementById('inputParcelaAtual').value) || 0
+                const totalParcelas = parseInt(document.getElementById('inputTotalParcelas').value) || 0
+        
+        
+                if (parcelaAtual < 1 || totalParcelas < 2) {
+                    alert('Informe a parcela atual e o total de parcelas!')
+                    return
+                }
+        
+                if (parcelaAtual > totalParcelas) {
+                    alert('A parcela atual não pode ser maior que o total!')
+                    return
+                }
+        
+                dadosMeses[mesAtual].cartaoCredito.itens.push({
+                    id: Date.now(),
+                    descricao,
+                    valorTotal: valor * totalParcelas,
+                    valorParcela: valor,
+                    parcelaAtual,
+                    totalParcelas,
+                    dataCompra: data
+                })
+        }
+
+        dadosMeses[mesAtual].cartaoCredito.realidade =
+            dadosMeses[mesAtual].cartaoCredito.itens
+                .reduce((soma, i) => soma + i.valorParcela, 0)
+
         renderizar()
-        return
-    }
     })
-      
 
     adicionarEventosEstimativa()
 }
@@ -1581,7 +1578,7 @@ function renderizar() {
     } else if (opcaoAtual === 'outros'){
         conteudoPrincipal.innerHTML = renderizarOutros(dados)
         setTimeout(() => adicionarEventosOutros(), 0)
-    } else if (opcaoAtual === 'cartaoCredito') { 
+    } else if (opcaoAtual === 'cartao') { 
         conteudoPrincipal.innerHTML = renderizarCartao(dados)
         setTimeout(() => adicionarEventosCartao(), 0)
     } else {
