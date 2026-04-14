@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>💰 Orçamento Familiar</title>
+        <link rel="stylesheet" href="style.css">
+        <link rel="manifest" href="manifest.json">
+        <meta name="theme-color" content="#28a745">
+    </head>
+
+    <body>
+        <div class="app-container">
+
+            <!-- HEADER -->
+             <header>
+                <h1>💰 Orçamento Familiar</h1>                
+             </header>
+
+             <!-- SELETORES -->
+            <div class="controles">
+                <div class="form-group">
+                        <label>Mês:</label>
+                        <div style="display:flex; gap:6px; align-items:center">
+                            <select id="mesSelect">
+                                <option value="">selecione</option>
+                            </select>
+                            <button id="btnNovoMes" class="btn-adicionar" title="Adicionar mês">+</button>
+                        </div>
+                     </div>
+
+                        <div class="form-group">
+                            <label>Opção:</label>
+                            <select id="opcaoSelect">
+                                <option value="resumo">Resumo</option>
+                                <option value="salario">Salário</option>
+                                <option value="contas">Contas Fixas</option>
+                                <option value="mercado">Mercado</option>
+                                <option value="refeicoes">Refeições</option>
+                                <option value="cartao">C. Crédito</option>
+                                <option value="outros">Outros</option>
+                            </select>
+                        </div>
+                </div>
+
+                <!-- CONTEÚDO DINÂMICO -->
+                <main id="conteudoPrincipal">
+
+                    <!-- Será preenchido via JavaScript -->
+
+                </main>
+            </div>
+
+            <!-- JAVASCRIPT -->
+             <script src="app.js"></script>
+            
+            <script>
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.register('service-worker.js')
+                        .then(() => console.log('Service Worker registrado!'))
+                        .catch(err => console.log('Erro no SW:', err))
+                }
+            </script>
+    
+    </body>
+</html>

@@ -1,0 +1,313 @@
+/*  ==============================
+    RESET E CONFIGURAÇÕES GLOBAIS
+    ============================== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;    
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f8f9fa;
+    min-height: 100vh;
+}
+
+.app-container {
+    max-width: 414px;
+    margin: 0 auto;
+    background: white;
+    min-height: 100vh;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);    
+}
+
+/*  ==============================
+    HEADER (CABEÇALHO)
+    ============================== */
+
+header {
+    background: #28a745;
+    color: white;
+    padding: 20px;
+    text-align: center;
+    border-radius: 0 0 20px 20px;
+}
+
+h1 {
+    font-size: 20px;
+    font-weight: 600;    
+}
+
+/*  ==============================
+    CONTROLES (DROPDOWNS)
+    ============================== */
+
+.controles {
+    padding: 20px;
+    background: white;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+select {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+}
+
+/*  ==============================
+    CONTEÚDO PRINCIPAL
+    ============================== */
+
+main {
+    padding: 20px;
+    min-height: 200px;
+}
+
+/*  ==============================
+    EFEITOS DE INTERAÇÃO
+    ============================== */
+
+select:hover {
+    border-color: #28a745
+}
+
+select:focus {
+    outline: none;
+    border-color: #28a745;
+    box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);    
+}
+
+/*  ==============================
+    MENSAGENS E PLACEHOLDERS
+    ============================== */
+
+main p {
+    text-align: center;
+    color: #999;
+    padding: 40px 20px;
+    font-size: 14px;
+}
+
+/*  ==============================
+    TABELA DE RESUMO
+    ============================== */
+
+.secao-titulo {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #28a745;
+}
+
+.tabela-resumo {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.tabela-resumo th,
+.tabela-resumo td {
+    padding: 10px 8px;
+    text-align: right;
+    font-size: 14px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.tabela-resumo th:first-child,
+.tabela-resumo td:first-child {
+    text-align: left;
+    color: #555;
+    font-weight: 500;
+}
+
+.tabela-resumo th {
+    color: #666;
+    font-size:12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.linha-saldo td {
+    font-weight: 700;
+    font-size: 16px;
+    padding-top: 15px;
+    border-top: 2px solid #333;
+    border-bottom: none;
+}
+
+.positivo { color: #28a745;}
+.negativo { color: #dc3545;}
+
+/*  ==============================
+    CONTAS FIXAS
+    ============================== */
+
+.input-realidade {
+    width: 90px;
+    padding: 6px 8px;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 14px;
+    text-align: right;
+}
+
+.input-realidade:focus {
+    outline: none;
+    border-color: #28a745;    
+}
+
+.btn-pago.ativo {
+    background: #28a745;
+    border-color: #28a745;
+    color: white;
+}
+
+.conta-paga td {
+    color: #28a745;
+    opacity: 0.7;
+}
+
+.valor-estimativa {
+    color: #999;
+    font-size: 13px;
+}
+
+/*  ==============================
+    FORMULÁRIO DE ADICIONAR ITEM
+    ============================== */
+
+.resumo-categoria {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+.form-adicionar {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.form-adicionar .form-group {
+    margin-bottom: 10px;
+}
+
+.form-adicionar input[type="text"],
+.form-adicionar input[type="number"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+.form-inline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-inline input {
+    flex: 1;
+}
+
+.simbolo-moeda {
+    font-size: 16px;
+    font-weight: 600;
+    color: #555;
+}
+
+.btn-adicionar {
+    width: 42px;
+    height: 42px;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.valor-item {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.btn-remover {
+    background: none;
+    border: none;
+    color: #dc3545;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+
+/*  ==============================
+    ABAS DO CARTÃO DE CRÉDITO
+    ============================== */
+
+.abas-cartao {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.aba-btn {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    background: white;
+    font-size: 14px;
+    cursor: pointer;
+    color: #666;
+}
+
+.aba-btn.ativa {
+    background: #28a745;
+    border-color: #28a745;
+    color: white;
+}
+
+.salario-bruto {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    margin-top: 8px;
+    border-top: 2px solid #28a745;
+    font-weight: 700;
+    color: #28a745;
+}
+
+.salario-desconto {
+    color: #dc3545;
+    font-weight: 600;
+    font-size: 14px;
+}

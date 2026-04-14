@@ -1,66 +1,241 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>💰 Orçamento Familiar</title>
-        <link rel="stylesheet" href="style.css">
-        <link rel="manifest" href="manifest.json">
-        <meta name="theme-color" content="#28a745">
-    </head>
-
-    <body>
-        <div class="app-container">
-
-            <!-- HEADER -->
-             <header>
-                <h1>💰 Orçamento Familiar</h1>                
-             </header>
-
-             <!-- SELETORES -->
-            <div class="controles">
-                <div class="form-group">
-                        <label>Mês:</label>
-                        <div style="display:flex; gap:6px; align-items:center">
-                            <select id="mesSelect">
-                                <option value="">selecione</option>
-                            </select>
-                            <button id="btnNovoMes" class="btn-adicionar" title="Adicionar mês">+</button>
-                        </div>
-                     </div>
-
-                        <div class="form-group">
-                            <label>Opção:</label>
-                            <select id="opcaoSelect">
-                                <option value="resumo">Resumo</option>
-                                <option value="salario">Salário</option>
-                                <option value="contas">Contas Fixas</option>
-                                <option value="mercado">Mercado</option>
-                                <option value="refeicoes">Refeições</option>
-                                <option value="cartao">C. Crédito</option>
-                                <option value="outros">Outros</option>
-                            </select>
-                        </div>
-                </div>
-
-                <!-- CONTEÚDO DINÂMICO -->
-                <main id="conteudoPrincipal">
-
-                    <!-- Será preenchido via JavaScript -->
-
-                </main>
-            </div>
-
-            <!-- JAVASCRIPT -->
-             <script src="app.js"></script>
-            
-            <script>
-                if ('serviceWorker' in navigator) {
-                    navigator.serviceWorker.register('service-worker.js')
-                        .then(() => console.log('Service Worker registrado!'))
-                        .catch(err => console.log('Erro no SW:', err))
-                }
-            </script>
+<html lang="pt-bBR">
+<head>
+    <meta charset="UTF-8">
     
-    </body>
-</html>
+    <!-- Garante que o app ocupe 100% da tela-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    
+    <title>💰 Orçamento Familiar</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a7a4a">
+    <!-- Chart.js para o gráfico -->
+    <script src="https://cdjs.cloudfire.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+
+    <!-- ══ HEADER ══ -->
+    <header class="header">
+        <div class="header-inner">
+            <h1>💰 Orçamento Familiar</h1>
+            <!-- Select de mês: última opção é "+ Novo Mês" -->
+            <select id="mesSelect" class="mes-select">
+                <option value="">Selecione o mês</option>
+                <!-- preenchido pelo JS -->
+                <option value="__novo__">+ Novo mês</option>
+            </select>
+        </div>
+    </header>
+
+    <!-- ══ OVERLAY DO FORMULÁRIO ══ -->
+    <div id="overlay" class="overlay hidden"></div>
+
+    <!-- ══ FORMULÁRIO COLAPSÁVEL ══ -->
+    <div id="formPanel" class="form-panel collapsed">
+        <div class="form-handle">
+            <span class="form-handle-bar"></span>
+        </div>
+        <h3 class="form-titulo">Novo lançamento</h3>
+        <div class="form-row two-col">
+            <select id="tipoSelect" class="input-field">
+                <option value="">Selecione o tipo</option>
+                <option value="mercado">🛒 Mercado</option>
+                <option value="refeicao">🍜 Refeição</option>
+                <option value="cartao">💳 Cartão à vista</option>
+                <option value="outros">📦 Outros gastos</option>
+                <option value="salario">💰 Salário</option>
+                <option value="rendaExtra">⭐ Renda extra</option>                
+            </select>
+            <input type="text" id="descricaoInput" class="input-field"
+                   placeholder="Descrição" autocomplete="off">
+        </div>
+        <div class="form-row valor-row">
+            <div class="valor-wrapper">
+                <span class="valor-prefix">¥</span>
+                <input type="number" id="valorInput" class="input-field input-valor"
+                       placeholder="0" inputmode="numeric">
+            </div>
+            <!-- Campos extras para salário - ocultos por padrão -->
+            <div id="salarioExtras" class="hidden">
+                <div class="form-row two-col" style="margin-top: 8px">
+                    <select id="salarioModo" class="input-field">
+                        <option value="calculo">📊 Cálculo por horas</option>
+                        <option value="simples">✏️ Valor simples</option>
+                    </select>
+                    <select id="salarioTipo" class="input-field">
+                        <option value="estimativa">Estimativa</option>
+                        <option value="realidade">Realidade (holerite)</option>
+                    </select>
+                </div>
+                <div id="camposCalculo" class="salario-campos hidden">
+                <!-- Preenchido pelo JS quando modo = calculo -->
+                </div>
+            </div>
+            <button id="btnAdicionar" class="btn-add" data-acao="adicionar">+</button>
+        </div>
+    </div>
+
+    <!-- ══ BOTÃO FLUTUANTE ══ -->
+    <button id="btnFlutuante" class="btn-flutuante" data-acao="toggleForm">+</button>
+
+    <!-- ── Cartões de saldo ── -->
+    <section class="cards-saldo">
+            <div class="card-saldo card-entrada">
+                <div class="card-label">Entradas</div>
+                <div id="totalEntradas" class="card-valor">¥</div>
+            </div>
+            <div class="card-saldo card-saida">
+                <div class="card-label">Saídas</div>
+                <div id="totalSaidas" class="card-valor">¥</div>
+            </div>
+    </section>
+
+    <!-- ── Tabela Resumo ── -->
+    <section class="card-resumo">
+        <tbody>
+            <tr>
+                <td><span class="icone-cat" style="background:#e8f5ee">💰</span></td>
+                <td>Salário</td>
+                <td id="r-salario" class="val-entrada">¥0</td>
+            </tr>
+            <tr id="tr-rendaExtra" class="hidden">
+                <td><span cllass="ícone-cat" style="background:#fff3e0">⭐</span></td>
+                <td>Renda extra</td>
+                <td id="r.rendaExtra" class="val-entrada">¥0</td>
+            </tr>
+            <tr>
+                <td><span class="icone-cat" style="background:#f3e8ff">📋</span></td>
+                <td>Contas Fixas</td>
+                <td id="r-contas" class="val-saida">¥0</td>
+            </tr>
+            <tr>
+                <td><span class="icone-cat" style="background:#fce8e8">💳</span></td>
+                <td>Cartão</td>
+                <td id="r-cartao" class="val-saida">¥0</td>
+            </tr>
+            <tr>
+                <td><span class="icone-cat" style="background:#e8f0fe">🛒</span></td>
+                <td>Refeições</td>
+                <td id="r-refeicoes" class="val-saida">¥0</td>
+            </tr>
+            <tr>
+                <td><span class="icone-cat" style="background:#f5f5f5">📦</span></td>
+                <td>Outros</td>
+                <td id="r-outros" class="val-saida">¥0</td>
+            </tr>
+            <tr class="linha-saldo">
+                <td colspan="2"><strong>Saldo</strong></td>
+                <td id="r-saldo" class="val-neutro">¥0</td>
+            </tr>
+        </tbody>
+    </section>
+
+    <!-- ── Gráfico ── -->
+    <section class="card-grafico">
+        <canvas id="grafico" height="160"></canvas>
+    </section>
+
+    <!-- ── Abas ── -->
+    <nav class="abas-nav">
+        <button class="aba ativa" data-aba="contas">
+            <span>📋</span> Contas Fixas
+        </button>
+        <button class="aba" data-aba="parcelados">
+            <span>💳</span> Parcelados
+        </button>
+        <button class="aba" data-aba="historico">
+            <span>📊</span> Histórico
+        </button>
+    </nav>
+
+    <!-- ── Conteúdo das abas ── -->
+    <section id="aba-contas" class="aba-conteudo">
+        <div class="aba-healer">
+            <span class="aba-titulo">Contas Fixas</span>
+            <button class="btn-add-conta" data-acao="abrirFormConta">+ Adicionar</button>
+        </div>
+        <!-- Form inline para nova conta fixa -->
+        <div id="formConta" class="form-inline-conta hidden">
+            <input type="text" id="contaDesc" class="input-field" placeholder="Descrição">
+            <div class="valor-wrapper">
+                <span class="valor-prefix">¥</span>
+                <input type="number" id="contaValor" class="input-field input-valor" placeholder="0">
+            </div>
+            <div class="form-row two-col">
+                <button data-acao="confirmarConta" class="btn-confirmar">Confirmar</button>
+                <button data-acao="cancelarConta" class="btn-cancelar">Cancelar</button>
+            </div>
+        </div>
+        <div id="listaContas"></div>
+    </section>
+
+    <section id="aba-parcelados" class="aba-conteudo hidden">
+        <div class="aba-header">
+            <span class="aba-titulo">Cartão Parcelado</span>
+            <button class="btn-add-conta" data-acao="abrirFormParcelado">+ Adicionar</button>
+        </div>
+        <div id="formParcelado" class="form-inline-conta hidden">
+            <input type="text" id="parceladoDesc" class="input-field" placeholder="Descrição">
+            <div class="form-row two-col">
+                <div class="valor-wrapper">
+                    <span class="valor-prefix">¥</span>
+                    <input type="number" id="parceladoValor" class="input-field input-valor" placeholder="Valor/parcela">
+                </div>
+                <div class="parcela-grupo">
+                    <input type="number" id="parcelaAtual" class="input-field" placeholder="Parcela atual" min="1">
+                </div>
+            </div>
+                <div class="valor-wrapper">
+                    <input type="number" id="totalParcelas" class="input-field" placeholder="Total de parcelas" min="2">
+                </div>
+                <div class="form-row two-col">
+                    <button data-acao="confirmarParcelado" class="btn-confirmar">Confirmar</button>
+                    <button data-acao="cancelarParcelado" class="btn-cancelar">Cancelar</button>
+                </div>
+            </div>
+            <div id="listaParcelados"></div>
+    </section>
+
+    <section id="aba-historico" class="aba-conteudo hidden">
+        <div class="aba-titulo">Histórico</div>
+    </section>
+
+</main>
+
+<!-- ══ TELA DE LOGIN ══ -->
+<div id="telaLogin" class="tela-login">
+    <div class="login-card">
+        <h2>🔐 Login</h2>
+        <input type="text" id="loginInput" class="input-field" placeholder="Usuário">
+        <input type="password" id="senhaInput" class="input-field" placeholder="Senha">
+        <button id="btnLogin" class="btn-confirmar" data-acao="login">Entrar</button>
+        <p id="erroLogin" class="erro-login"></p>
+    </div>
+</div>
+
+<!-- ══ MODAL NOVO MÊS ══ -->
+<div id="modalNovoMes" class="modal hidden">
+    <div class="modal-card">
+        <h3>➕ Novo Mês</h3>
+        <select id="novoMesMes" class="input-field"></select>
+        <select id="novoMesAno" class="input-field" style="margin-top:8px"></select>
+        <div class="form-row two-col" style="margin-top:12px">
+            <button data-acao="confirmarNovoMes" class="btn-confirmar">Criar mês</button>
+            <button data-acao="fecharModal" class="btn-cancelar">Cancelar</button>
+        </div>
+        <p id="erroNovoMes" class="erro-login"></p>
+    </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('service-worker.js')
+            .then(() => console.log('SW registrado'))
+            .catch(err => console.log('Erro SW:', err))
+    }
+</script>
+    
+</body>
+    </html>"
