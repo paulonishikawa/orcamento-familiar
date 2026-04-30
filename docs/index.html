@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-bBR">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     
@@ -11,7 +11,7 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a7a4a">
     <!-- Chart.js para o gráfico -->
-    <script src="https://cdjs.cloudfire.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -69,7 +69,15 @@
                     </select>
                 </div>
                 <div id="camposCalculo" class="salario-campos hidden">
-                <!-- Preenchido pelo JS quando modo = calculo -->
+                    <div class="form-row two-col" style="margin-top:8px">
+                        <input type="number" id="salDiasDiurnos" class="input-field" placeholder="Dias Diurnos">
+                        <input type="number" id="salDiasNoturnos" class="input-field" placeholder="Dias Noturnos">
+                    </div>
+                    <div class="form-row two-col">
+                        <input type="number" id="salHEDiurnas" class="input-field" placeholder="HE Diurnas">
+                        <input type="number" id="salHENoturnas" class="input-field" placeholder="HE Noturnas">
+                    </div>
+                    
                 </div>
             </div>
             <button id="btnAdicionar" class="btn-add" data-acao="adicionar">+</button>
@@ -78,6 +86,7 @@
 
     <!-- ══ BOTÃO FLUTUANTE ══ -->
     <button id="btnFlutuante" class="btn-flutuante" data-acao="toggleForm">+</button>
+<main id="main" class="main hidden">
 
     <!-- ── Cartões de saldo ── -->
     <section class="cards-saldo">
@@ -93,6 +102,7 @@
 
     <!-- ── Tabela Resumo ── -->
     <section class="card-resumo">
+        <table class="tabela-resumo">
         <tbody>
             <tr>
                 <td><span class="icone-cat" style="background:#e8f5ee">💰</span></td>
@@ -100,9 +110,9 @@
                 <td id="r-salario" class="val-entrada">¥0</td>
             </tr>
             <tr id="tr-rendaExtra" class="hidden">
-                <td><span cllass="ícone-cat" style="background:#fff3e0">⭐</span></td>
+                <td><span class="icone-cat" style="background:#fff3e0">⭐</span></td>
                 <td>Renda extra</td>
-                <td id="r.rendaExtra" class="val-entrada">¥0</td>
+                <td id="r-rendaExtra" class="val-entrada">¥0</td>
             </tr>
             <tr>
                 <td><span class="icone-cat" style="background:#f3e8ff">📋</span></td>
@@ -116,6 +126,11 @@
             </tr>
             <tr>
                 <td><span class="icone-cat" style="background:#e8f0fe">🛒</span></td>
+                <td>Mercado</td>
+                <td id="r-mercado" class="val-saida">¥0</td>
+            </tr>
+            <tr>
+                <td><span class="icone-cat" style="background:#e8f0fe">🍜</span></td>
                 <td>Refeições</td>
                 <td id="r-refeicoes" class="val-saida">¥0</td>
             </tr>
@@ -129,6 +144,7 @@
                 <td id="r-saldo" class="val-neutro">¥0</td>
             </tr>
         </tbody>
+        </table>
     </section>
 
     <!-- ── Gráfico ── -->
@@ -138,7 +154,10 @@
 
     <!-- ── Abas ── -->
     <nav class="abas-nav">
-        <button class="aba ativa" data-aba="contas">
+        <button class="aba ativa" data-aba="salario">
+            <span>💰</span> Salário
+        </button>
+        <button class="aba" data-aba="contas">
             <span>📋</span> Contas Fixas
         </button>
         <button class="aba" data-aba="parcelados">
@@ -150,8 +169,8 @@
     </nav>
 
     <!-- ── Conteúdo das abas ── -->
-    <section id="aba-contas" class="aba-conteudo">
-        <div class="aba-healer">
+    <section id="aba-contas" class="aba-conteudo hidden">
+        <div class="aba-header">
             <span class="aba-titulo">Contas Fixas</span>
             <button class="btn-add-conta" data-acao="abrirFormConta">+ Adicionar</button>
         </div>
@@ -168,6 +187,13 @@
             </div>
         </div>
         <div id="listaContas"></div>
+    </section>
+
+    <section id="aba-salario" class="aba-conteudo">
+        <div class="aba-header">
+            <span class="aba-titulo">Configuração de Salário</span>
+        </div>
+        <div id="detalhesSalario"></div>
     </section>
 
     <section id="aba-parcelados" class="aba-conteudo hidden">
@@ -199,6 +225,7 @@
 
     <section id="aba-historico" class="aba-conteudo hidden">
         <div class="aba-titulo">Histórico</div>
+        <div id="listaHistorico"></div>
     </section>
 
 </main>
