@@ -550,7 +550,20 @@ function toggleFormulario(forcar) {
         panel.classList.remove('collapsed')
         overlay.classList.remove('hidden')
         btnFlt.classList.add('ativo')
-        document.getElementById('tipoSelect').focus()
+
+        const select = document.getElementById('tipoSelect')
+        // Aguarda a animação de subida do painel (300ms) terminar
+        setTimeout(() => {
+            select.focus()
+            // Tenta abrir o seletor nativo do sistema (Android/iOS)
+            if (typeof select.showPicker === 'function') {
+                try {
+                    select.showPicker()
+                } catch (err) {
+                    console.warn('showPicker não pôde ser ativado:', err)
+                }
+            }
+        }, 350)
     }
 }
 
